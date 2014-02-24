@@ -16,7 +16,7 @@ def json_data(data):
     return json.loads(re.search('.*?({.*)\)', data).group(1))
 
 for cinema_name, cinema_id in austin_cinemas.items():
-    r = requests.get('https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?callback=jQuery18209344239365309477_1393202979246&cinemaid={cinema_id:04.0f}&callback=tix.theaterLinks'.format(cinema_id=cinema_id))
+    r = requests.get('https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid={cinema_id:04.0f}&callback=callback'.format(cinema_id=cinema_id))
     data = json_data(r.text)
 
     for date_data in data['Cinema']['Dates']:
