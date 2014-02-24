@@ -3,10 +3,7 @@ pcake
 
 Searches for Master Pancake showtimes in Austin
 
-usage
-=====
-
-```
+```bash
 $ ./pcake.py 
 Back To The Future
 Thursday, March 13, 2014 - Lakeline
