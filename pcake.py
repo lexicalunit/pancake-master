@@ -61,7 +61,7 @@ def pancakes(market_id):
                     continue # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
-                    onsale = session_data['SessionStatus'] == 'onsaale'
+                    onsale = session_data['SessionStatus'] == 'onsale'
                     result = {
                         'film': film.lstrip('Master Pancake: ').title(),
                         'cinema': cinema,
