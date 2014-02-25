@@ -1,5 +1,3 @@
-#!/usr/bin/env python2.7
-
 import gzip
 import hashlib
 import json
@@ -18,7 +16,7 @@ log = logging.getLogger()
 
 
 COMMASPACE = ', '
-RECIPIENTS = ['amy@lexicalunit.com']
+RECIPIENTS = [line.strip() for line in open('pcake.list')]
 SENDER = 'pancake-alerter'
 PICKLE_FILE = 'pancake.p'
 
@@ -26,7 +24,13 @@ PICKLE_FILE = 'pancake.p'
 def notify(pancake):
     try:
         subject = 'Pancake Alert: {}'.format(pancake['film'])
-        body = '{}\n{}\n{}\n{}\n{}'.format(pancake['film'], pancake['cinema'], pancake['date'], pancake['time'], pancake['onsale'])
+        body = '{}\n{}\n{}\n{}\n{}'.format(
+            pancake['film']
+            , pancake['cinema']
+            , pancake['date']
+            , pancake['time']
+            , 'On sale now!' if pancake['onsale'] else 'Not on sale.'
+        )
 
         if pancake['onsale']:
             subject += ' ON SALE!'
