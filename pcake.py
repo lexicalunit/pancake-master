@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 import gzip
 import hashlib
 import json
+import logging
 import pickle
 import re
 import smtplib
@@ -12,6 +13,10 @@ from email.mime.text import MIMEText
 from itertools import product
 
 
+logging.basicConfig(filename='pcake.log', filemode='w', level=logging.DEBUG)
+log = logging.getLogger()
+
+
 COMMASPACE = ', '
 RECIPIENTS = ['amy@lexicalunit.com']
 SENDER = 'pancake-alerter'
@@ -19,21 +24,25 @@ PICKLE_FILE = 'pancake.p'
 
 
 def notify(pancake):
-    subject = 'Pancake Alert: {}'.format(pancake['film'])
-    body = '{}\n{}\n{}\n{}\n{}'.format(pancake['film'], pancake['cinema'], pancake['date'], pancake['time'], pancake['onsale'])
+    try:
+        subject = 'Pancake Alert: {}'.format(pancake['film'])
+        body = '{}\n{}\n{}\n{}\n{}'.format(pancake['film'], pancake['cinema'], pancake['date'], pancake['time'], pancake['onsale'])
 
-    if pancake['onsale']:
-        subject += ' ON SALE!'
-        body += '\n{}'.format(pancake['url'])
+        if pancake['onsale']:
+            subject += ' ON SALE!'
+            body += '\n{}'.format(pancake['url'])
 
-    msg = MIMEText(body)
-    msg['Subject'] = subject
-    msg['From'] = SENDER
-    msg['To'] = COMMASPACE.join(RECIPIENTS)
+        msg = MIMEText(body)
+        msg['Subject'] = subject
+        msg['From'] = SENDER
+        msg['To'] = COMMASPACE.join(RECIPIENTS)
 
-    s = smtplib.SMTP('localhost')
-    s.sendmail(SENDER, RECIPIENTS, msg.as_string())
-    s.quit()
+        s = smtplib.SMTP('localhost')
+        s.sendmail(SENDER, RECIPIENTS, msg.as_string())
+        s.quit()
+    except Exception as e:
+        log.error('email fail: {}'.format(e))
+        raise
 
 
 def json_data(data):   
@@ -41,7 +50,12 @@ def json_data(data):
 
 
 def cinemas(market_id):
-    r = urllib2.urlopen('https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx?callback=callback&date=20140223&marketid={:04.0f}'.format(market_id)).read()
+    try:
+        r = urllib2.urlopen('https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx?callback=callback&date=20140223&marketid={:04.0f}'.format(market_id)).read()
+    except Exception as e:
+        log.error('market sessions fail: {}'.format(e))
+        raise
+
     data = json_data(r)
 
     for cinema in data['Market']['Cinemas']:
@@ -50,7 +64,12 @@ def cinemas(market_id):
 
 def pancakes(market_id):
     for cinema, cinema_id in cinemas(market_id):
-        r = urllib2.urlopen('https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid={:04.0f}&callback=callback'.format(cinema_id)).read()
+        try:
+            r = urllib2.urlopen('https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid={:04.0f}&callback=callback'.format(cinema_id)).read()
+        except Exception as e:
+            log.error('cinema sessions fail: {}'.format(e))
+            raise
+
         data = json_data(r)
 
         for date_data in data['Cinema']['Dates']:
@@ -84,28 +103,33 @@ def pancake_key(pancake):
 
 
 def save(filename, object, bin=1):
-    with gzip.GzipFile(filename, 'wb') as f:
-        f.write(pickle.dumps(object, bin))
+    log.info('saving {}'.format(filename))
+    try:
+        with gzip.GzipFile(filename, 'wb') as f:
+            f.write(pickle.dumps(object, bin))
+    except Exception as e:
+        log.error('load failure: {}'.format(e))
+        raise
 
 
 def load(filename):
-    with gzip.GzipFile(filename, 'rb') as f:
-        buf = ''
-        while True:
-            data = f.read()
-            if data == '':
-                break
-            buf += data
-        return pickle.loads(buf)
-
-
-if __name__ == '__main__':
+    log.info('loading {}'.format(filename))
     try:
-        db = load(PICKLE_FILE)
-    except:
-        db = {}
+        with gzip.GzipFile(filename, 'rb') as f:
+            buf = ''
+            while True:
+                data = f.read()
+                if data == '':
+                    break
+                buf += data
+            return pickle.loads(buf)
+    except Exception as e:
+        log.error('load failure: {}'.format(e))
+        raise
 
-    for pancake in pancakes(0): # Market 0 is Austin
+
+def find_pancakes(market_id):
+    for pancake in pancakes(market_id):
         key = pancake_key(pancake)
 
         if key in db and db[key]['onsale'] != pancake['onsale'] and pancake['onsale']:
@@ -114,5 +138,17 @@ if __name__ == '__main__':
             notify(pancake)
     
         db[key] = pancake
+
+
+if __name__ == '__main__':
+    try:
+        db = load(PICKLE_FILE)
+    except:
+        db = {}
+
+    try:
+        find_pancakes(0) # 0 is Austin's market id
+    except Exception as e:
+        log.error('script fail: {}'.format(e))
 
     save(PICKLE_FILE, db)
