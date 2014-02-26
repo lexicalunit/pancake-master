@@ -30,6 +30,12 @@ SENDER = 'pancake-alerter'
 TEMPLATE_FILE = 'pcake.html'
 
 
+class API(object):
+    """Alamo Drafthouse API resources."""
+    cinema_sessions_url = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx'
+    market_sessions_url = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx'
+
+
 def pancake_datetime(pancake):
     """Returns a datetime object representing the show time of the given pancake."""
     timestamp = '{} - {}'.format(pancake['date'], pancake['time'])
@@ -77,14 +83,14 @@ def pancake_text(pancakes):
     """Returns a plain text digest of the given pancakes."""
     text = ''
     for pancake in sorted(pancakes, key=pancake_sort_key):
-        params = {
+        params = (
             pancake['film'],
             pancake['cinema'],
             pancake['date'],
             pancake['time'],
             'On sale now!' if pancake['onsale'] else 'Not on sale.',
-        }
-        text += '{}\n{}\n{}\n{}\n{}'.format(params)
+        )
+        text += '{}\n{}\n{}\n{}\n{}'.format(*params)
         if pancake['onsale']:
             text += '\n{}'.format(pancake['url'])
         text += '\n\n'
@@ -122,7 +128,9 @@ def parse_data(data):
 def query_cinemas(market_id):
     """Queries the Alamo Drafthouse API for the list of cinemas in a given market."""
     try:
-        r = urllib2.urlopen('https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx?callback=callback&date=20140223&marketid={:04.0f}'.format(market_id)).read()
+        today = datetime.strftime(datetime.now(), '%Y%m%d')
+        url = '{}?&date={}&marketid={:04.0f}&callback=callback'.format(API.market_sessions_url, today, market_id)
+        r = urllib2.urlopen(url).read()
         data = parse_data(r)
     except Exception as e:
         log.error('market sessions fail: {}'.format(e))
@@ -139,7 +147,8 @@ def query_pancakes(market_id):
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
         try:
-            r = urllib2.urlopen('https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid={:04.0f}&callback=callback'.format(cinema_id)).read()
+            url = '{}?cinemaid={:04.0f}&callback=callback'.format(API.cinema_sessions_url, cinema_id)
+            r = urllib2.urlopen(url).read()
             data = parse_data(r)
         except Exception as e:
             log.error('cinema sessions fail: {}'.format(e))
