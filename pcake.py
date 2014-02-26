@@ -55,8 +55,6 @@ def pancake_html(pancakes):
 
         content += '</ul>\n\n'
 
-    print content
-
     template = open(TEMPLATE_FILE, 'r').read()
     return template.format(content=content)
 
@@ -203,7 +201,8 @@ if __name__ == '__main__':
 
     try:
         pancakes = find_pancakes(db, 0) # 0 is Austin's market id
-        notify(pancakes)
+        if pancakes:
+            notify(pancakes)
     except Exception as e:
         log.error('script fail: {}'.format(e))
 
