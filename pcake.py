@@ -237,6 +237,7 @@ def update_pancakes(db, pancakes):
 def prune_database(db):
     """Removes old pancakes from the database."""
     # TODO: Go through the database checking to see if the pancakes are old, remove them if they are.
+    pass
 
 
 if __name__ == '__main__':
