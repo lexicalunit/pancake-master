@@ -88,6 +88,7 @@ def pancake_text(pancakes):
         if pancake['onsale']:
             text += '\n{}'.format(pancake['url'])
         text += '\n\n'
+    return text
 
 
 def notify(pancakes):
