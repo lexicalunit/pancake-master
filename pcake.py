@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# License: none (public domain)
+
 import gzip
 import hashlib
 import json
