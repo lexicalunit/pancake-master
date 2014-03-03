@@ -12,13 +12,13 @@ import smtplib
 import urllib2
 
 
-from datetime import datetime
+from datetime import datetime, time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from itertools import groupby
 
 
-logging.basicConfig(filename='pcake.log', filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename='pfannkuchen.log', filemode='w', level=logging.DEBUG)
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
 
@@ -26,10 +26,10 @@ log.setLevel(logging.DEBUG)
 COMMASPACE = ', '
 DATETIME_FORMAT = '%A, %B %d, %Y - %I:%M%p'
 PANCAKE_MARKET = 0 # 0 is Austin's market id
-PICKLE_FILE = 'pcake.p'
-RECIPIENTS = [line.strip() for line in open('pcake.list')]
-SENDER = 'pancake-alerter'
-TEMPLATE_FILE = 'pcake.html'
+PICKLE_FILE = 'pfannkuchen.p'
+RECIPIENTS = []
+TEMPLATE_FILE = 'pfannkuchen.html'
+TODAY = datetime.now()
 
 
 class API(object):
@@ -107,16 +107,20 @@ def notify(pancakes):
     try:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = 'Pancake Alert: {}'.format(datetime.strftime(datetime.now(), DATETIME_FORMAT))
-        msg['From'] = SENDER
         msg['To'] = COMMASPACE.join(RECIPIENTS)
-        msg.attach(MIMEText(pancake_text(pancakes), 'plain'))
+
+        plain = pancake_text(pancakes)        
+        log.info('digest:\n{}'.format(plain))
+
+        msg.attach(MIMEText(plain, 'plain'))
         msg.attach(MIMEText(pancake_html(pancakes), 'html'))
 
-        s = smtplib.SMTP('localhost')
-        s.sendmail(SENDER, RECIPIENTS, msg.as_string())
-        s.quit()
-
-        log.info('sent email(s) to {}'.format(COMMASPACE.join(RECIPIENTS)))
+        if RECIPIENTS:
+            msg['From'] = RECIPIENTS[0]
+            s = smtplib.SMTP('localhost')
+            s.sendmail(msg['From'], RECIPIENTS, msg.as_string())
+            s.quit()
+            log.info('sent email(s) to {}'.format(COMMASPACE.join(RECIPIENTS)))
     except Exception as e:
         log.error('email fail: {}'.format(e))
         raise
@@ -130,8 +134,7 @@ def parse_data(data):
 def query_cinemas(market_id):
     """Queries the Alamo Drafthouse API for the list of cinemas in a given market."""
     try:
-        today = datetime.strftime(datetime.now(), '%Y%m%d')
-        url = '{}?&date={}&marketid={:04.0f}&callback=callback'.format(API.market_sessions_url, today, market_id)
+        url = '{}?&date={}&marketid={:04.0f}&callback=callback'.format(API.market_sessions_url, datetime.strftime(TODAY, '%Y%m%d'), market_id)
         r = urllib2.urlopen(url).read()
         data = parse_data(r)
     except Exception as e:
@@ -165,14 +168,14 @@ def query_pancakes(market_id):
                     continue # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
-                    onsale = session_data['SessionStatus'] == 'onsale'
+                    onsale = session_data['SessionStatus'] == u'onsale'
                     pancake = {
-                        'film': film.lstrip('Master Pancake: ').title(),
-                        'film_uid': film_uid,
-                        'cinema': cinema,
-                        'cinema_url': cinema_url,
-                        'date': date_data['Date'],
-                        'time': session_data['SessionTime'],
+                        'film': film.lstrip('Master Pancake: ').title().encode('utf-8'),
+                        'film_uid': film_uid.encode('utf-8'),
+                        'cinema': cinema.encode('utf-8'),
+                        'cinema_url': cinema_url.encode('utf-8'),
+                        'date': date_data['Date'].encode('utf-8'),
+                        'time': session_data['SessionTime'].encode('utf-8'),
                         'onsale': onsale,
                     }
                     if onsale:
@@ -238,9 +241,9 @@ def update_pancakes(db, pancakes):
 
 def prune_database(db):
     """Removes old pancakes from the database."""
-    # TODO: Go through the database checking to see if the pancakes are old, remove them if they are.
-    pass
-
+    for key, pancake in db.items():
+        if pancake_datetime(pancake).date() < TODAY.date():
+            del db[key]
 
 if __name__ == '__main__':
     try:
@@ -248,6 +251,12 @@ if __name__ == '__main__':
     except:
         # start new database if we couldn't load one
         db = {}
+
+    try:
+        RECIPIENTS = [line.strip() for line in open('pfannkuchen.list')]
+    except:
+        # will not spend email notifications
+        pass
 
     pancakes = query_pancakes(PANCAKE_MARKET)
     updated = update_pancakes(db, pancakes)
