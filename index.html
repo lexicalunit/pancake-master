@@ -162,6 +162,8 @@ li:last-child {
 }
 </style>
 <script type="text/javascript">
+pancakes = new Array();
+
 function pad(num, size) {
     var s = num + "";
     while (s.length < size)
@@ -189,17 +191,27 @@ function clear() {
 }
 
 function parseCinema(data) {
-    // show("Parsing " + data.CinemaName + " Data...");
+    show("Parsing " + data.Cinema.CinemaName + " Data...");
 
-    show(JSON.stringify(data));
-
-    // for(var i = 0; i < data.Cinema.Dates.length; i++) {
-    //     var date_data = data.Cinema.Dates[i];
-    //     for(var j = 0; j < date_data.length; j++) {
-    //         var film_data = date_data[j];
-    //         show(film_data.Film);
-    //     }
-    // }
+    for(var i = 0; i < data.Cinema.Dates.length; i++) {
+        var date_data = data.Cinema.Dates[i];
+        for(var j = 0; j < date_data.Films.length; j++) {
+            var film_data = date_data.Films[j];
+            var is_pancake = film_data.Film.match(/pancake/i);
+            if(is_pancake) {
+                pancake = {
+                    film: film_data.Film // string.capwords(film.lstrip('Master Pancake: ').lower())
+                    , film_uid: film_data.FilmId
+                    , cinema: data.Cinema.CinemaName
+                    // , cinema_url: film_data.,
+                    , date: date_data.Date
+                    // , time: session_data['SessionTime']
+                    // , onsale: onsale
+                };
+                show(JSON.stringify(pancake));
+            }
+        }
+    }
 }
 
 function buildCinema(cinema) {
