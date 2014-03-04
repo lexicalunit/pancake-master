@@ -250,14 +250,13 @@ if __name__ == '__main__':
     try:
         db = load_database()
     except:
-        # start new database if we couldn't load one
+        log.warn('creating new pancake database...')
         db = {}
 
     try:
         RECIPIENTS = [line.strip() for line in open('pfannkuchen.list')]
     except:
-        # will not spend email notifications
-        pass
+        log.warn('no email recipients found, not sending email notifications...')
 
     pancakes = query_pancakes(PANCAKE_MARKET)
     updated = update_pancakes(db, pancakes)
