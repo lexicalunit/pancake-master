@@ -9,6 +9,7 @@ import logging
 import pickle
 import re
 import smtplib
+import string
 import urllib2
 
 
@@ -68,17 +69,17 @@ def pancake_html(pancakes):
     by_film_and_cinema = lambda p: (p['film_uid'], p['film'], p['cinema_url'], p['cinema'])
     by_date = lambda p: p['date']
 
-    content = ''
+    content = u''
     for k, pancakes in groupby(pancakes, key=by_film_and_cinema):
-        content += '<h1><a href="https://drafthouse.com/uid/{}/">{}</h1>\n'.format(k[0], k[1])
-        content += '<h2><a href="{}">{}</a></h2>\n'.format(k[2], k[3])
-        content += '<ul>\n'
+        content += u'<h1><a href="https://drafthouse.com/uid/{}/">{}</h1>\n'.format(k[0], k[1])
+        content += u'<h2><a href="{}">{}</a></h2>\n'.format(k[2], k[3])
+        content += u'<ul>\n'
         for k, pancakes in groupby(pancakes, key=by_date):
-            content += '    <li>{} - {}</li>\n'.format(k, ', '.join(pancake_times_html(pancakes)))
-        content += '</ul>\n\n'
+            content += u'    <li>{} - {}</li>\n'.format(k, ', '.join(pancake_times_html(pancakes)))
+        content += u'</ul>\n\n'
 
     template = open(TEMPLATE_FILE, 'r').read()
-    return template.format(content=content)
+    return template.decode('utf-8').format(content=content)
 
 
 def pancake_text(pancakes):
@@ -90,12 +91,12 @@ def pancake_text(pancakes):
             pancake['cinema'],
             pancake['date'],
             pancake['time'],
-            'On sale now!' if pancake['onsale'] else 'Not on sale.',
+            u'On sale now!' if pancake['onsale'] else u'Not on sale.',
         )
-        text += '{}\n{}\n{}\n{}\n{}'.format(*params)
+        text += u'{}\n{}\n{}\n{}\n{}'.format(*params)
         if pancake['onsale']:
-            text += '\n{}'.format(pancake['url'])
-        text += '\n\n'
+            text += u'\n{}'.format(pancake['url'])
+        text += u'\n\n'
     return text
 
 
@@ -110,10 +111,10 @@ def notify(pancakes):
         msg['To'] = COMMASPACE.join(RECIPIENTS)
 
         plain = pancake_text(pancakes)        
-        log.info('digest:\n{}'.format(plain))
+        log.info(u'digest:\n{}'.format(plain))
 
-        msg.attach(MIMEText(plain, 'plain'))
-        msg.attach(MIMEText(pancake_html(pancakes), 'html'))
+        msg.attach(MIMEText(plain, 'plain', 'utf-8'))
+        msg.attach(MIMEText(pancake_html(pancakes), 'html', 'utf-8'))
 
         if RECIPIENTS:
             msg['From'] = RECIPIENTS[0]
@@ -170,12 +171,12 @@ def query_pancakes(market_id):
                 for session_data in film_data['Sessions']:
                     onsale = session_data['SessionStatus'] == u'onsale'
                     pancake = {
-                        'film': film.lstrip('Master Pancake: ').title().encode('utf-8'),
-                        'film_uid': film_uid.encode('utf-8'),
-                        'cinema': cinema.encode('utf-8'),
-                        'cinema_url': cinema_url.encode('utf-8'),
-                        'date': date_data['Date'].encode('utf-8'),
-                        'time': session_data['SessionTime'].encode('utf-8'),
+                        'film': string.capwords(film.lstrip('Master Pancake: ').lower()),
+                        'film_uid': film_uid,
+                        'cinema': cinema,
+                        'cinema_url': cinema_url,
+                        'date': date_data['Date'],
+                        'time': session_data['SessionTime'],
                         'onsale': onsale,
                     }
                     if onsale:
@@ -187,10 +188,10 @@ def query_pancakes(market_id):
 def pancake_key(pancake):
     """Creates a unique id for a given pancake."""
     m = hashlib.md5()
-    m.update(pancake['film'])
-    m.update(pancake['cinema'])
-    m.update(pancake['date'])
-    m.update(pancake['time'])
+    m.update(pancake['film'].encode('utf-8'))
+    m.update(pancake['cinema'].encode('utf-8'))
+    m.update(pancake['date'].encode('utf-8'))
+    m.update(pancake['time'].encode('utf-8'))
     return m.hexdigest()
 
 
