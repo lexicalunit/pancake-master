@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript">
+
+function pad(num, size) {
+    var s = num + "";
+    while (s.length < size) s = "0" + s;
+    return s;
+}
+
+function daystr() {
+    var today = new Date();
+    var dd = pad(today.getDate(), 2);
+    var mm = pad(today.getMonth() + 1, 2);
+    var yyyy = today.getFullYear();
+    return yyyy + mm + dd
+}
+
+function parse(data) {
+    document.getElementsByTagName("body").innerHTML = JSON.stringify(data);
+}
+
+function build() {
+    var url = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx?date=" + daystr() + "&marketid=0000&callback=parse";
+    var script = document.createElement('script');
+    script.setAttribute('src', url);
+    document.getElementsByTagName('head')[0].appendChild(script);
+}
+
+</script>
+<!-- <script type="text/javascript" src="https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid=0003&callback=parse"></script> -->
+</head>
+<body onload="build();">
+Loading...
+</body>
+</html>
