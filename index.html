@@ -178,23 +178,76 @@ function daystr() {
 }
 
 function show(text) {
-    document.getElementsByTagName("body")[0].innerHTML = text;
+    var node = document.createTextNode(text);
+    var out = document.getElementsByTagName("body")[0];
+    out.appendChild(node);
+    out.appendChild(document.createElement("br"));
 }
 
-function parse(data) {
+function clear() {
+    document.getElementsByTagName("body")[0].innerHTML = "";
+}
+
+function parseCinema(data) {
+    // show("Parsing " + data.CinemaName + " Data...");
+
     show(JSON.stringify(data));
+
+    // for(var i = 0; i < data.Cinema.Dates.length; i++) {
+    //     var date_data = data.Cinema.Dates[i];
+    //     for(var j = 0; j < date_data.length; j++) {
+    //         var film_data = date_data[j];
+    //         show(film_data.Film);
+    //     }
+    // }
 }
 
-function build() {
-    var url = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx?date=" + daystr() + "&marketid=0000&callback=parse";
+function buildCinema(cinema) {
+    show("Fetching " + cinema.CinemaName + " Data...");
+
+    var url = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid=" + pad(cinema.CinemaId, 4) + "&callback=parseCinema";
     var script = document.createElement('script');
     script.setAttribute('src', url);
     document.getElementsByTagName('head')[0].appendChild(script);
 }
+
+function buildCinemas(cinemas) {
+    show("Parsing Cinemas Data...");
+
+    for(var i = 0; i < cinemas.length; i++) {
+        var cinema = cinemas[i];
+        buildCinema(cinema);
+    }
+}
+
+function parseMarket(data) {
+    show("Parsing Market Data...");
+
+    var cinemas = new Array();
+    for(var i = 0; i < data.Market.Cinemas.length; i++) {
+        var cinema = data.Market.Cinemas[i];
+        var item = {CinemaId: cinema.CinemaId, CinemaName: cinema.CinemaName, CinemaURL: cinema.CinemaURL};
+        cinemas.push(item);
+    }
+
+    buildCinemas(cinemas);
+}
+
+function buildMarket() {
+    clear();
+
+    show("Fetching Market Data...");
+    var url = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx?date=" + daystr() + "&marketid=" + pad(0, 4) + "&callback=parseMarket";
+    var script = document.createElement('script');
+    script.setAttribute('src', url);
+    document.getElementsByTagName('head')[0].appendChild(script);
+}
+
+// show(JSON.stringify(data));
+
 </script>
-<!-- <script type="text/javascript" src="https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid=0003&callback=parse"></script> -->
 </head>
-<body onload="build();">
+<body onload="buildMarket();">
 Loading...
 </body>
 </html>
