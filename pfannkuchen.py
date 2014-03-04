@@ -144,7 +144,7 @@ def query_cinemas(market_id):
 
     cinemas = []
     for cinema in data['Market']['Cinemas']:
-       cinemas.append((int(cinema['CinemaId']), cinema['CinemaName'], cinema['CinemaURL']))
+        cinemas.append((int(cinema['CinemaId']), cinema['CinemaName'], cinema['CinemaURL']))
     return cinemas
 
 
