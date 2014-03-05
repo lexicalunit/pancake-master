@@ -126,7 +126,7 @@ def notify(pancakes):
 
     try:
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Pancake Alert: {}'.format(datetime.strftime(datetime.now(), DATETIME_FORMAT))
+        msg['Subject'] = 'Pancake Master: {}'.format(datetime.strftime(datetime.now(), DATETIME_FORMAT))
         msg['To'] = COMMASPACE.join(RECIPIENTS)
 
         plain = pancake_text(pancakes)        
