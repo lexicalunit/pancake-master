@@ -2,9 +2,16 @@
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta content="text/html; charset=utf-8" http-equiv="content-type" />
-<link rel="stylesheet" type="text/css" href="pancake.css">
+<link rel="stylesheet" type="text/css" href="pancake.css" />
+<script type="text/javascript" src="jquery-1.11.0.min.js"></script>
 <script type="text/javascript">
-pancakes = new Array();
+status_number = 0;
+
+function capwords(text) {
+    return text.replace(/\w\S*/g, function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+}
 
 function pad(num, size) {
     var s = num + "";
@@ -21,61 +28,112 @@ function daystr() {
     return yyyy + mm + dd;
 }
 
-function show(text) {
-    var node = document.createTextNode(text);
-    var out = document.getElementsByTagName("body")[0];
-    out.appendChild(node);
-    out.appendChild(document.createElement("br"));
+function status(text) {
+    window.status_number++;
+    $("#statuses").append("<li class=\"status_item\" id=\"status_" + window.status_number + "\">" + text + "</li>");
+    return window.status_number;
 }
 
-function clear() {
-    document.getElementsByTagName("body")[0].innerHTML = "";
+function status_update(text, number) {
+    $("#status_" + number).html(text);
+}
+
+function pancake_location(pancake) {
+    return (pancake.film_uid + " " + pancake.cinema).replace(/\s/g, "_");
+}
+
+function show_pancake(pancake) {
+    if($("#" + pancake_location(pancake)).length) {
+        var content = "";
+        if(pancake.onsale) {
+            content += '    <li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
+        } else {
+            content += '    <li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
+        }
+        $("#" + pancake_location(pancake)).append(content);
+    } else {
+        var content = "";
+        content += '<h1><a href="https://drafthouse.com/uid/' + pancake.film_uid + '/">' + pancake.film + '</h1>\n';
+        content += '<h2><a href="' + pancake.cinema_url + '">' + pancake.cinema + '</a></h2>\n';
+
+        content += '<ul id="' + pancake_location(pancake) + '">\n';
+        if(pancake.onsale) {
+            content += '    <li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
+        } else {
+            content += '    <li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
+        }
+        content += '</ul>\n\n';
+
+        $("#main").append(content);
+    }
 }
 
 function parseCinema(data) {
-    show("Parsing " + data.Cinema.CinemaName + " Data...");
+    var status_message = "Parsing " + data.Cinema.CinemaName + " Data...";
+    var status_id = status(status_message);
 
     for(var i = 0; i < data.Cinema.Dates.length; i++) {
         var date_data = data.Cinema.Dates[i];
         for(var j = 0; j < date_data.Films.length; j++) {
             var film_data = date_data.Films[j];
-            var is_pancake = film_data.Film.match(/pancake/i);
-            if(is_pancake) {
+
+            if(!film_data.Film.match(/pancake/i)) {
+                continue; // DO NOT WANT!
+            }
+
+            for(var k = 0; k < film_data.Sessions.length; k++) {
+                var session_data = film_data.Sessions[k];
+                var onsale = session_data.SessionStatus == "onsale";
+                
                 pancake = {
-                    film: film_data.Film // string.capwords(film.lstrip('Master Pancake: ').lower())
+                    film: capwords(film_data.Film.replace("Master Pancake: ", "").toLowerCase())
                     , film_uid: film_data.FilmId
                     , cinema: data.Cinema.CinemaName
-                    // , cinema_url: film_data.,
+                    , cinema_url: data.Cinema.CinemaURL
                     , date: date_data.Date
-                    // , time: session_data['SessionTime']
-                    // , onsale: onsale
+                    , time: session_data.SessionTime
+                    , onsale: onsale
                 };
-                show(JSON.stringify(pancake));
+
+                if(onsale) {
+                    pancake.url = session_data.SessionSalesURL;
+                }
+
+                show_pancake(pancake);
             }
         }
     }
+
+    status_update(status_message + " done.", status_id);
 }
 
 function buildCinema(cinema) {
-    show("Fetching " + cinema.CinemaName + " Data...");
+    var status_message = "Fetching " + cinema.CinemaName + " Data...";
+    var status_id = status(status_message);
 
     var url = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid=" + pad(cinema.CinemaId, 4) + "&callback=parseCinema";
     var script = document.createElement('script');
     script.setAttribute('src', url);
     document.getElementsByTagName('head')[0].appendChild(script);
+
+    status_update(status_message + " done.", status_id);
 }
 
 function buildCinemas(cinemas) {
-    show("Parsing Cinemas Data...");
+    var status_message = "Parsing Cinemas Data...";
+    var status_id = status(status_message);
 
     for(var i = 0; i < cinemas.length; i++) {
         var cinema = cinemas[i];
         buildCinema(cinema);
     }
+
+    status_update(status_message + " done.", status_id);
 }
 
 function parseMarket(data) {
-    show("Parsing Market Data...");
+    var status_message = "Parsing Market Data...";
+    var status_id = status(status_message);
 
     var cinemas = new Array();
     for(var i = 0; i < data.Market.Cinemas.length; i++) {
@@ -84,24 +142,34 @@ function parseMarket(data) {
         cinemas.push(item);
     }
 
+    status_update(status_message + " done.", status_id);
+
     buildCinemas(cinemas);
 }
 
 function buildMarket() {
-    clear();
-
-    show("Fetching Market Data...");
+    var status_message = "Fetching Market Data...";
+    var status_id = status(status_message);
+    
     var url = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx?date=" + daystr() + "&marketid=" + pad(0, 4) + "&callback=parseMarket";
     var script = document.createElement('script');
     script.setAttribute('src', url);
     document.getElementsByTagName('head')[0].appendChild(script);
+
+    status_update(status_message + " done.", status_id);
 }
 
-// show(JSON.stringify(data));
+// status(JSON.stringify(data));
 
 </script>
 </head>
 <body onload="buildMarket();">
-Loading...
+<div id="main"></div>
+<div id="status">
+    <ul id="statuses"></ul>
+</div>
+<div id="footer">
+    <a href="https://github.com/lexicalunit/pancake-master">pancake-master on github.com</a>
+</div>
 </body>
 </html>
