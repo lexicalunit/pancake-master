@@ -63,7 +63,7 @@ body {
     font-family: sans-serif;
 }
 
-h1 {
+#main h1 {
     background-color: #A31E21;
     border-left: 8px solid #E2C162;
     border-right: 8px solid #E2C162;
@@ -77,13 +77,13 @@ h1 {
     text-shadow: 3px 3px 3px #4d4d4d;
 }
 
-h1 a {
+#main h1 a {
     color: #E9E5C8 !important;
     text-decoration: none !important;
 
 }
 
-h2 {
+#main h2 {
     background-color: #A31E21;
     border-left: 8px solid #E2C162;
     border-right: 8px solid #E2C162;
@@ -93,12 +93,12 @@ h2 {
     padding-left: 3%;
 }
 
-h2 a {
+#main h2 a {
     color: #E9E5C8 !important;
     text-decoration: none !important;
 }
 
-li {
+#main li {
     font-size: 125%;
     line-height: 150%;
     padding-left: 3%;
@@ -107,7 +107,7 @@ li {
     margin-right: 3%;
 }
 
-ul {
+#main ul {
     background-color: #A31E21;
     border-bottom-left-radius: 15px;
     border-bottom-right-radius: 15px;
@@ -118,18 +118,18 @@ ul {
     padding: 2%;
 }
 
-li:nth-child(odd) {
+#main li:nth-child(odd) {
     background-color: #FFFFFF;
 }
-li:nth-child(even) {
+#main li:nth-child(even) {
     background-color: #F5F5F5;
 }
 
-li:first-child {
+#main li:first-child {
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
 }
-li:last-child {
+#main li:last-child {
     border-bottom-left-radius: 15px;
     border-bottom-right-radius: 15px;
 }
