@@ -147,6 +147,58 @@ body {
     text-decoration: none !important;
 }
 
+#status {
+    position: fixed;
+    top: 50px;
+    left: 10px;
+}
+
+#status {
+}
+
+#status a {
+    text-decoration: none !important;
+    color: black;
+    font-size: small;
+    font-family: sans-serif;
+}
+
+a.tooltip span {
+    z-index: 10;
+    display: none;
+    position: fixed;
+    top: -13px;
+    left: 80px;
+}
+
+a.tooltip:hover span {
+    display: block;
+}
+
+a.tooltip span {
+    position: absolute;
+    width: 300px;
+    line-height: 150%;
+    padding: 10px 16px 10px 8px;
+    text-align: left;
+    color: rgb(255, 255, 255);
+    background: rgb(96, 172, 57);
+    border: 0px 0px 0px 0px none none none none rgb(255, 255, 255) rgb(70, 126, 42) rgb(255, 255, 255) rgb(255, 255, 255);
+    border-radius: 0px 3px 3px 0px;
+}
+
+a.tooltip span:after {
+      content: "";
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-width: 24px;
+      border-style: solid;
+      border-color: transparent #60AC39 transparent transparent;
+      top: 0px;
+      left: -48px;
+}
+
 @media only screen and (max-device-width: 480px) {
     h1 {
         font-size: 200%;
