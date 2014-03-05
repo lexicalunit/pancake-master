@@ -164,7 +164,7 @@ body {
     font-family: sans-serif;
 }
 
-a.tooltip span {
+a.tooltip div {
     z-index: 10;
     display: none;
     position: fixed;
@@ -172,11 +172,11 @@ a.tooltip span {
     left: 80px;
 }
 
-a.tooltip:hover span {
+a.tooltip:hover div {
     display: block;
 }
 
-a.tooltip span {
+a.tooltip div {
     position: absolute;
     width: 300px;
     line-height: 150%;
@@ -188,7 +188,7 @@ a.tooltip span {
     border-radius: 0px 3px 3px 0px;
 }
 
-a.tooltip span:after {
+a.tooltip div:after {
       content: "";
       position: absolute;
       width: 0;
