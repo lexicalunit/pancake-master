@@ -184,7 +184,7 @@ a.tooltip div {
     text-align: left;
     color: rgb(255, 255, 255);
     background: rgb(96, 172, 57);
-    border: 0px 0px 0px 0px none none none none rgb(255, 255, 255) rgb(70, 126, 42) rgb(255, 255, 255) rgb(255, 255, 255);
+    border: 0px;
     border-radius: 0px 3px 3px 0px;
 }
 
