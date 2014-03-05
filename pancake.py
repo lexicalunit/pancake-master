@@ -19,17 +19,30 @@ from email.mime.text import MIMEText
 from itertools import groupby
 
 
-logging.basicConfig(filename='pfannkuchen.log', filemode='w', level=logging.DEBUG)
-log = logging.getLogger()
+# setup logging to pancake.log and console
+log = logging.getLogger('pancake')
 log.setLevel(logging.DEBUG)
+
+fh = logging.FileHandler('pancake.log')
+fh.setLevel(logging.DEBUG)
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+
+log.addHandler(ch)
+log.addHandler(fh)
 
 
 COMMASPACE = ', '
 DATETIME_FORMAT = '%A, %B %d, %Y - %I:%M%p'
 PANCAKE_MARKET = 0 # 0 is Austin's market id
-PICKLE_FILE = 'pfannkuchen.p'
+PICKLE_FILE = 'pancake.p'
 RECIPIENTS = []
-TEMPLATE_FILE = 'pfannkuchen.html'
+TEMPLATE_FILE = 'pancake.html'
 TODAY = datetime.now()
 
 
@@ -78,8 +91,12 @@ def pancake_html(pancakes):
             content += u'    <li>{} - {}</li>\n'.format(k, ', '.join(pancake_times_html(pancakes)))
         content += u'</ul>\n\n'
 
-    template = open(TEMPLATE_FILE, 'r').read()
-    return template.decode('utf-8').format(content=content)
+    try:
+        template = open(TEMPLATE_FILE, 'r').read()
+        return template.decode('utf-8').format(content=content)
+    except:
+        log.warn('could not load HTML template file, generating incomplete HTML...')
+        return content
 
 
 def pancake_text(pancakes):
@@ -254,12 +271,15 @@ if __name__ == '__main__':
         db = {}
 
     try:
-        RECIPIENTS = [line.strip() for line in open('pfannkuchen.list')]
+        RECIPIENTS = [line.strip() for line in open('pancake.list')]
     except:
         log.warn('no email recipients found, not sending email notifications...')
 
-    pancakes = query_pancakes(PANCAKE_MARKET)
-    updated = update_pancakes(db, pancakes)
-    notify(updated)
-    prune_database(db)
-    save_database(db)
+    try:
+        pancakes = query_pancakes(PANCAKE_MARKET)
+        updated = update_pancakes(db, pancakes)
+        notify(updated)
+        prune_database(db)
+        save_database(db)
+    except:
+        log.exception('fatal error:')
