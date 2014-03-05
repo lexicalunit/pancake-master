@@ -158,15 +158,15 @@ function buildMarket() {
 
     status_update(status_message + " done.", status_id);
 }
-
-// status(JSON.stringify(data));
-
 </script>
 </head>
 <body onload="buildMarket();">
 <div id="main"></div>
 <div id="status">
-    <ul id="statuses"></ul>
+    <a href="#" class="tooltip">
+        + status
+        <span><ul id="statuses"></ul></span>
+    </a>
 </div>
 <div id="footer">
     <a href="https://github.com/lexicalunit/pancake-master">pancake-master on github.com</a>
