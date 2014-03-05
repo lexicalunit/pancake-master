@@ -43,6 +43,7 @@ PANCAKE_MARKET = 0 # 0 is Austin's market id
 PICKLE_FILE = 'pancake.p'
 RECIPIENTS = []
 TEMPLATE_FILE = 'pancake.html'
+STYLESHEET_FILE = 'pancake.css'
 TODAY = datetime.now()
 
 
@@ -93,7 +94,8 @@ def pancake_html(pancakes):
 
     try:
         template = open(TEMPLATE_FILE, 'r').read()
-        return template.decode('utf-8').format(content=content)
+        style = open(STYLESHEET_FILE, 'r').read()
+        return template.decode('utf-8').format(style=style, content=content)
     except:
         log.warn('could not load HTML template file, generating incomplete HTML...')
         return content
