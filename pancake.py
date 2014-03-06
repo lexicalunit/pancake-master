@@ -17,7 +17,7 @@ from datetime import datetime, time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from itertools import groupby
-from pytz import timezone
+from pytz import timezone # third party; is there a standard solution?
 
 
 # setup logging to pancake.log and console
