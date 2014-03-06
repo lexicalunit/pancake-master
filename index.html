@@ -47,9 +47,9 @@ function show_pancake(pancake) {
     if($("#" + pancake_location(pancake)).length) {
         var content = "";
         if(pancake.onsale) {
-            content += '    <li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
+            content += '<li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
         } else {
-            content += '    <li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
+            content += '<li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
         }
         $("#" + pancake_location(pancake)).append(content);
     } else {
@@ -59,9 +59,9 @@ function show_pancake(pancake) {
 
         content += '<ul id="' + pancake_location(pancake) + '">\n';
         if(pancake.onsale) {
-            content += '    <li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
+            content += '<li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
         } else {
-            content += '    <li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
+            content += '<li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
         }
         content += '</ul>\n\n';
 
@@ -69,7 +69,7 @@ function show_pancake(pancake) {
     }
 }
 
-function parseCinema(data) {
+function parse_cinema(data) {
     var status_message = "Parsing " + data.Cinema.CinemaName + " Data...";
     var status_id = status(status_message);
 
@@ -108,60 +108,75 @@ function parseCinema(data) {
     status_update(status_message + " done.", status_id);
 }
 
-function buildCinema(cinema) {
+function build_cinema(cinema) {
     var status_message = "Fetching " + cinema.CinemaName + " Data...";
     var status_id = status(status_message);
 
-    var url = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx?cinemaid=" + pad(cinema.CinemaId, 4) + "&callback=parseCinema";
-    var script = document.createElement('script');
-    script.setAttribute('src', url);
-    document.getElementsByTagName('head')[0].appendChild(script);
+    $.ajax({
+        url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx"
+        , dataType: "jsonp"
+        , jsonp: "callback"
+        , data: {
+            cinemaid: pad(cinema.CinemaId, 4)
+        }
+        , success: parse_cinema
+    });
 
     status_update(status_message + " done.", status_id);
 }
 
-function buildCinemas(cinemas) {
+function build_cinemas(cinemas) {
     var status_message = "Parsing Cinemas Data...";
     var status_id = status(status_message);
 
     for(var i = 0; i < cinemas.length; i++) {
         var cinema = cinemas[i];
-        buildCinema(cinema);
+        build_cinema(cinema);
     }
 
     status_update(status_message + " done.", status_id);
 }
 
-function parseMarket(data) {
+function parse_market(data) {
     var status_message = "Parsing Market Data...";
     var status_id = status(status_message);
 
     var cinemas = new Array();
     for(var i = 0; i < data.Market.Cinemas.length; i++) {
         var cinema = data.Market.Cinemas[i];
-        var item = {CinemaId: cinema.CinemaId, CinemaName: cinema.CinemaName, CinemaURL: cinema.CinemaURL};
+        var item = {
+            CinemaId: cinema.CinemaId
+            , CinemaName: cinema.CinemaName
+            , CinemaURL: cinema.CinemaURL
+        };
         cinemas.push(item);
     }
 
     status_update(status_message + " done.", status_id);
 
-    buildCinemas(cinemas);
+    build_cinemas(cinemas);
 }
 
-function buildMarket() {
+function build_market() {
     var status_message = "Fetching Market Data...";
     var status_id = status(status_message);
     
-    var url = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx?date=" + daystr() + "&marketid=" + pad(0, 4) + "&callback=parseMarket";
-    var script = document.createElement('script');
-    script.setAttribute('src', url);
-    document.getElementsByTagName('head')[0].appendChild(script);
+    $.ajax({
+        url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx"
+        , dataType: "jsonp"
+        , jsonp: "callback"
+        , data: {
+            date: daystr()
+            , marketid: pad(0, 4)
+        }
+        , success: parse_market
+    });
 
     status_update(status_message + " done.", status_id);
 }
 </script>
 </head>
-<body onload="buildMarket();">
+<body onload="build_market();">
 <div id="main"></div>
 <div id="status">
     <a href="#" class="tooltip">
