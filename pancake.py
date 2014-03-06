@@ -116,7 +116,7 @@ def pancake_html(pancakes):
 
 def pancake_text(pancakes):
     """Returns a plain text digest of the given pancakes."""
-    text = ''
+    text = u''
     for pancake in sorted(pancakes, key=pancake_sort_key):
         params = (
             pancake['film'],
@@ -137,23 +137,24 @@ def notify(pancakes, recipients):
     if not pancakes:
         return
 
+    plain = pancake_text(pancakes)
+    log.info(u'digest:\n{}'.format(plain))
+
+    if not recipients:
+        return
+
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = 'Pancake Master: {}'.format(datetime_string(datetime.now()))
+    msg['To'] = ', '.join(recipients)
+    msg['From'] = recipients[0]
+    msg.attach(MIMEText(plain, 'plain', 'utf-8'))
+    msg.attach(MIMEText(pancake_html(pancakes), 'html', 'utf-8'))
+
     try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Pancake Master: {}'.format(datetime_string(datetime.now()))
-        msg['To'] = ', '.join(recipients)
-
-        plain = pancake_text(pancakes)        
-        log.info(u'digest:\n{}'.format(plain))
-
-        msg.attach(MIMEText(plain, 'plain', 'utf-8'))
-        msg.attach(MIMEText(pancake_html(pancakes), 'html', 'utf-8'))
-
-        if recipients:
-            msg['From'] = recipients[0]
-            s = smtplib.SMTP('localhost')
-            s.sendmail(msg['From'], recipients, msg.as_string())
-            s.quit()
-            log.info('sent email(s) to {}'.format(', '.join(recipients)))
+        s = smtplib.SMTP('localhost')
+        s.sendmail(msg['From'], recipients, msg.as_string())
+        s.quit()
+        log.info('sent email(s) to {}'.format(', '.join(recipients)))
     except Exception as e:
         log.error('email fail: {}'.format(e))
         raise
