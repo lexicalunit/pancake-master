@@ -96,19 +96,19 @@ def pancake_html(pancakes):
     by_film_and_cinema = lambda p: (p['film_uid'], p['film'], p['cinema_url'], p['cinema'])
     by_datetime = lambda p: p['datetime']
 
-    content = u''
+    content = ''
     for k, pancakes in groupby(pancakes, key=by_film_and_cinema):
-        content += u'<h1><a href="https://drafthouse.com/uid/{}/">{}</h1>\n'.format(k[0], k[1])
-        content += u'<h2><a href="{}">{}</a></h2>\n'.format(k[2], k[3])
-        content += u'<ul>\n'
+        content += '<h1><a href="https://drafthouse.com/uid/{}/">{}</h1>\n'.format(k[0], k[1])
+        content += '<h2><a href="{}">{}</a></h2>\n'.format(k[2], k[3])
+        content += '<ul>\n'
         for k, pancakes in groupby(pancakes, key=by_datetime):
-            content += u'    <li>{} - {}</li>\n'.format(date_string(k), ', '.join(pancake_times_html(pancakes)))
-        content += u'</ul>\n\n'
+            content += '    <li>{} - {}</li>\n'.format(date_string(k), ', '.join(pancake_times_html(pancakes)))
+        content += '</ul>\n\n'
 
     try:
         template = open(TEMPLATE_FILE, 'r').read()
         style = open(STYLESHEET_FILE, 'r').read()
-        return template.decode('utf-8').format(style=style, content=content)
+        return template.format(style=style, content=content)
     except:
         log.warn('could not load HTML template file, generating incomplete HTML...')
         return content
@@ -116,19 +116,19 @@ def pancake_html(pancakes):
 
 def pancake_text(pancakes):
     """Returns a plain text digest of the given pancakes."""
-    text = u''
+    text = ''
     for pancake in sorted(pancakes, key=pancake_sort_key):
         params = (
-            pancake['film'],
+            pancake['film'].encode('utf-8'),
             pancake['cinema'],
             date_string(pancake['datetime']),
             time_string(pancake['datetime']),
-            u'On sale now!' if pancake['onsale'] else u'Not on sale.',
+            'On sale now!' if pancake['onsale'] else 'Not on sale.',
         )
-        text += u'{}\n{}\n{}\n{}\n{}'.format(*params)
+        text += '{}\n{}\n{}\n{}\n{}'.format(*params)
         if pancake['onsale']:
-            text += u'\n{}'.format(pancake['url'])
-        text += u'\n\n'
+            text += '\n{}'.format(pancake['url'])
+        text += '\n\n'
     return text
 
 
@@ -138,7 +138,7 @@ def notify(pancakes, recipients):
         return
 
     plain = pancake_text(pancakes)
-    log.info(u'digest:\n{}'.format(plain))
+    log.info('digest:\n{}'.format(plain))
 
     if not recipients:
         return
@@ -147,8 +147,8 @@ def notify(pancakes, recipients):
     msg['Subject'] = 'Pancake Master: {}'.format(datetime_string(datetime.now()))
     msg['To'] = ', '.join(recipients)
     msg['From'] = recipients[0]
-    msg.attach(MIMEText(plain, 'plain', 'utf-8'))
-    msg.attach(MIMEText(pancake_html(pancakes), 'html', 'utf-8'))
+    msg.attach(MIMEText(plain, 'plain'))
+    msg.attach(MIMEText(pancake_html(pancakes), 'html'))
 
     try:
         s = smtplib.SMTP('localhost')
@@ -182,8 +182,13 @@ def query_cinemas(market_id):
 
     cinemas = []
     for cinema in data['Market']['Cinemas']:
-        cinemas.append((int(cinema['CinemaId']), cinema['CinemaName'], cinema['CinemaURL']))
+        cinemas.append((int(cinema['CinemaId']), str(cinema['CinemaName']), str(cinema['CinemaURL'])))
     return cinemas
+
+
+def sanitize_film_title(title):
+    """Sanitize utf-8 film title, returns ASCII title."""
+    return str(title.replace(u'\u2019', "'").replace(u'\u2018', ''))
 
 
 def query_pancakes(market_id):
@@ -191,7 +196,7 @@ def query_pancakes(market_id):
 
     def pancake_datetime(date_str, time_str):
         """Returns a datetime object representing the show time of the given pancake."""
-        timestamp = '{} - {}'.format(date_str, time_str)
+        timestamp = '{} - {}'.format(str(date_str), str(time_str))
 
         # Alamo Drafthouse API returns times with a 'p' appended for PM, otherwise assume AM
         timestamp = timestamp[:-1] + 'PM' if timestamp.endswith('p') else timestamp[:-1] + 'AM'
@@ -214,25 +219,25 @@ def query_pancakes(market_id):
 
         for date_data in data['Cinema']['Dates']:
             for film_data in date_data['Films']:
-                film = film_data['Film']
-                film_uid = film_data['FilmId']
+                film = sanitize_film_title(film_data['Film'])
+                film_uid = str(film_data['FilmId'])
 
                 if not all(s in film.lower() for s in ['pancake', 'master']):
                     continue # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
-                    onsale = session_data['SessionStatus'] == u'onsale'
+                    onsale = str(session_data['SessionStatus']) == 'onsale'
                     pancake = {
                         'film': string.capwords(film.replace('Master Pancake: ', '').lower()),
                         'film_uid': film_uid,
                         'url': None,
-                        'cinema': cinema,
-                        'cinema_url': cinema_url,
+                        'cinema': str(cinema),
+                        'cinema_url': str(cinema_url),
                         'datetime': pancake_datetime(date_data['Date'], session_data['SessionTime']),
                         'onsale': onsale,
                     }
                     if onsale:
-                        pancake['url'] = session_data['SessionSalesURL']
+                        pancake['url'] = str(session_data['SessionSalesURL'])
                     pancakes.append(pancake)
     return pancakes
 
@@ -240,9 +245,9 @@ def query_pancakes(market_id):
 def pancake_key(pancake):
     """Creates a unique id for a given pancake."""
     m = hashlib.md5()
-    m.update(pancake['film'].encode('utf-8'))
-    m.update(pancake['cinema'].encode('utf-8'))
-    m.update(datetime_string(pancake['datetime']).encode('utf-8'))
+    m.update(pancake['film'])
+    m.update(pancake['cinema'])
+    m.update(datetime_string(pancake['datetime']))
     return m.hexdigest()
 
 
