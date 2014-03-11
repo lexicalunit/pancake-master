@@ -102,7 +102,7 @@ def pancake_html(pancakes):
         content += u'<h2><a href="{}">{}</a></h2>\n'.format(k[2], k[3])
         content += u'<ul>\n'
         for k, pancakes in groupby(pancakes, key=by_datetime):
-            content += u'    <li>{} - {}</li>\n'.format(datetime_string(k), ', '.join(pancake_times_html(pancakes)))
+            content += u'    <li>{} - {}</li>\n'.format(date_string(k), ', '.join(pancake_times_html(pancakes)))
         content += u'</ul>\n\n'
 
     try:
@@ -217,13 +217,13 @@ def query_pancakes(market_id):
                 film = film_data['Film']
                 film_uid = film_data['FilmId']
 
-                if 'pancake' not in film.lower():
+                if not all(s in film.lower() for s in ['pancake', 'master']):
                     continue # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
                     onsale = session_data['SessionStatus'] == u'onsale'
                     pancake = {
-                        'film': string.capwords(film.lstrip('Master Pancake: ').lower()),
+                        'film': string.capwords(film.replace('Master Pancake: ', '').lower()),
                         'film_uid': film_uid,
                         'url': None,
                         'cinema': cinema,
