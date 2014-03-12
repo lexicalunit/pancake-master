@@ -44,28 +44,29 @@ function pancake_location(pancake) {
     return (pancake.film_uid + " " + pancake.cinema).replace(/\s/g, "_");
 }
 
+function pancake_item(pancake) {
+    content = '';
+    if(pancake.status == 'onsale') {
+        content += '<li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
+    } else if(pancake.status == 'soldout') {
+        content += '<li><span class="soldout">' + pancake.date + ' - ' + pancake.time + '</span></li>\n';
+    } else {
+        content += '<li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
+    }
+    return content;
+}
+
 function show_pancake(pancake) {
+    // TODO: List multiple times for a show on the same day at the same location in one item.
     if($("#" + pancake_location(pancake)).length) {
-        var content = "";
-        if(pancake.onsale) {
-            content += '<li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
-        } else {
-            content += '<li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
-        }
-        $("#" + pancake_location(pancake)).append(content);
+        $("#" + pancake_location(pancake)).append(pancake_item(pancake));
     } else {
         var content = "";
         content += '<h1><a href="https://drafthouse.com/uid/' + pancake.film_uid + '/">' + pancake.film + '</h1>\n';
         content += '<h2><a href="' + pancake.cinema_url + '">' + pancake.cinema + '</a></h2>\n';
-
         content += '<ul id="' + pancake_location(pancake) + '">\n';
-        if(pancake.onsale) {
-            content += '<li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
-        } else {
-            content += '<li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
-        }
+        content += pancake_item(pancake);
         content += '</ul>\n\n';
-
         $("#main").append(content);
     }
     $("h1").fitText(1.5);
@@ -87,7 +88,6 @@ function parse_cinema(data) {
 
             for(var k = 0; k < film_data.Sessions.length; k++) {
                 var session_data = film_data.Sessions[k];
-                var onsale = session_data.SessionStatus == "onsale";
                 
                 pancake = {
                     film: capwords(film_data.Film.replace("Master Pancake: ", "").toLowerCase())
@@ -96,10 +96,10 @@ function parse_cinema(data) {
                     , cinema_url: data.Cinema.CinemaURL
                     , date: date_data.Date
                     , time: session_data.SessionTime
-                    , onsale: onsale
+                    , status: session_data.SessionStatus
                 };
 
-                if(onsale) {
+                if(session_data.SessionStatus == 'onsale') {
                     pancake.url = session_data.SessionSalesURL;
                 }
 
