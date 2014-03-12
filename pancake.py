@@ -12,11 +12,10 @@ import smtplib
 import string
 import urllib2
 
-
 from datetime import datetime, time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from itertools import groupby
+from itertools import groupby, count
 from pytz import timezone # third party; is there a standard solution?
 
 
@@ -43,7 +42,6 @@ PANCAKE_TIMEZONE = timezone('US/Central') # Austin is US/Central
 
 PICKLE_FILE = 'pancake.pickle'
 RECIPIENTS_FILE = 'pancake.list'
-STYLESHEET_FILE = 'pancake.css'
 TEMPLATE_FILE = 'pancake.html'
 
 ALAMO_DATETIME_FORMAT = '%A, %B %d, %Y - %I:%M%p'
@@ -79,36 +77,66 @@ def pancake_sort_key(pancake):
     return pancake['film'], pancake['cinema'], pancake['datetime']
 
 
-def pancake_html(pancakes):
-    """Returns an HTML string digest of the given pancakes."""
-    pancakes = sorted(pancakes, key=pancake_sort_key)
+def html_link(url, text):
+    """Returns pancake styled HTML for hyperlink."""
+    return '<a href="{url}" style="margin: 0;padding: 0;border: 0;text-decoration: none;">{text}</a>'.format(url=url, text=text)
 
-    def pancake_times_html(pancakes):
-        """Returns a list of pancake times, as HTML, with hyperlink if currently on sale."""
-        return [
-            '<a href="{}">{}</a>'.format(p['url'], time_string(p['datetime']))
-            if p['onsale']
-            else time_string(p['datetime'])
-            for p in pancakes
-        ]
+
+def html_film(film_uid, film):
+    """Returns pancake styled HTML for film header."""
+    return '<h1 style="margin: 0;padding: 2% 2% 0% 2%;border: 0;background-color: #A31E21;border-left: 8px solid #E2C162;border-right: 8px solid #E2C162;border-top-left-radius: 15px;border-top-right-radius: 15px;border-top: 8px solid #E2C162;color: #E9E5C8;margin-top: 5%;text-shadow: 3px 3px 3px #4d4d4d;"><a href="https://drafthouse.com/uid/{film_uid}/" style="color: #E9E5C8;text-decoration: none;">{film}</a></h1>\n'.format(film_uid=film_uid, film=film)
+
+
+def html_cinema(cinema_url, cinema):
+    """Returns pancake styled HTML for cinema header."""
+    return '<h2 style="margin: 0;padding: 0;border: 0;background-color: #A31E21;border-left: 8px solid #E2C162;border-right: 8px solid #E2C162;color: #E9E5C8;padding-bottom: 1%;padding-left: 3%;"><a href="{cinema_url}" style="color: #E9E5C8;text-decoration: none;">{cinema}</a></h2>\n'.format(cinema_url=cinema_url, cinema=cinema)
+
+
+def html_pancake_times(pancakes):
+    """Returns a list of pancake times, as styled HTML, with hyperlink if currently on sale."""
+    return [
+        html_link(p['url'], time_string(p['datetime']))
+        if p['onsale']
+        else time_string(p['datetime'])
+        for p in pancakes
+    ]
+
+
+def html_pancake(pancakes):
+    """Returns pancake styled HTML digest of the given pancakes."""
+    pancakes = sorted(pancakes, key=pancake_sort_key)
 
     # things to group by
     by_film_and_cinema = lambda p: (p['film_uid'], p['film'], p['cinema_url'], p['cinema'])
-    by_datetime = lambda p: p['datetime']
+    by_day = lambda p: p['datetime'].date()
 
     content = ''
     for k, pancakes in groupby(pancakes, key=by_film_and_cinema):
-        content += '<h1><a href="https://drafthouse.com/uid/{}/">{}</h1>\n'.format(k[0], k[1])
-        content += '<h2><a href="{}">{}</a></h2>\n'.format(k[2], k[3])
-        content += '<ul>\n'
-        for k, pancakes in groupby(pancakes, key=by_datetime):
-            content += '    <li>{} - {}</li>\n'.format(date_string(k), ', '.join(pancake_times_html(pancakes)))
+        content += html_film(k[0], k[1])
+        content += html_cinema(k[2], k[3])
+        content += '<ul style="margin: 0;padding: 2%;border: 0;list-style: none;background-color: #A31E21;border-bottom-left-radius: 15px;border-bottom-right-radius: 15px;border-bottom: 8px solid #E2C162;border-left: 8px solid #E2C162;border-right: 8px solid #E2C162;list-style-type: none;">\n'
+
+        items = []
+        for k, pancakes in groupby(pancakes, key=by_day):
+            items.append((date_string(k), ', '.join(html_pancake_times(pancakes))))
+
+        for item, n in zip(items, count(1)):
+            li_style = 'margin: 0;padding: 0;border: 0;font-size: 125%;line-height: 150%;padding-left: 3%;padding-right: 3%;margin-left: 3%;margin-right: 3%;'
+            if n % 2 == 0:
+                li_style += 'background-color: #FFFFFF;'
+            else:
+                li_style += 'background-color: #F5F5F5;'
+            if n == 1:
+                li_style += 'border-top-left-radius: 15px;border-top-right-radius: 15px;'
+            if n == len(items):
+                li_style += 'border-bottom-left-radius: 15px;border-bottom-right-radius: 15px;'
+            content += '    <li style="{li_style}">{day} - {links}</li>\n'.format(li_style=li_style, day=item[0], links=item[1])
+
         content += '</ul>\n\n'
 
     try:
         template = open(TEMPLATE_FILE, 'r').read()
-        style = open(STYLESHEET_FILE, 'r').read()
-        return template.format(style=style, content=content)
+        return template.format(content=content)
     except:
         log.warn('could not load HTML template file, generating incomplete HTML...')
         return content
@@ -148,7 +176,7 @@ def notify(pancakes, recipients):
     msg['To'] = ', '.join(recipients)
     msg['From'] = recipients[0]
     msg.attach(MIMEText(plain, 'plain'))
-    msg.attach(MIMEText(pancake_html(pancakes), 'html'))
+    msg.attach(MIMEText(html_pancake(pancakes), 'html'))
 
     try:
         s = smtplib.SMTP('localhost')
