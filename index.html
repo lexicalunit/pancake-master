@@ -45,13 +45,13 @@ function pancake_location(pancake) {
 }
 
 function pancake_item(pancake) {
-    content = '';
-    if(pancake.status == 'onsale') {
-        content += '<li>' + pancake.date + ' - <a href="' + pancake.url + '">' + pancake.time + '</a></li>\n';
-    } else if(pancake.status == 'soldout') {
-        content += '<li><span class="soldout">' + pancake.date + ' - ' + pancake.time + '</span></li>\n';
+    content = "";
+    if(pancake.status == "onsale") {
+        content += "<li>" + pancake.date + " - <a href=\"" + pancake.url + "\">" + pancake.time + "</a></li>\n";
+    } else if(pancake.status == "soldout") {
+        content += "<li><span class=\"soldout\">" + pancake.date + " - " + pancake.time + "</span></li>\n";
     } else {
-        content += '<li>' + pancake.date + ' - ' + pancake.time + '</li>\n';
+        content += "<li>" + pancake.date + " - " + pancake.time + "</li>\n";
     }
     return content;
 }
@@ -62,11 +62,11 @@ function show_pancake(pancake) {
         $("#" + pancake_location(pancake)).append(pancake_item(pancake));
     } else {
         var content = "";
-        content += '<h1><a href="https://drafthouse.com/uid/' + pancake.film_uid + '/">' + pancake.film + '</h1>\n';
-        content += '<h2><a href="' + pancake.cinema_url + '">' + pancake.cinema + '</a></h2>\n';
-        content += '<ul id="' + pancake_location(pancake) + '">\n';
+        content += "<h1><a href=\"https://drafthouse.com/uid/" + pancake.film_uid + "/\">" + pancake.film + "</h1>\n";
+        content += "<h2><a href=\"" + pancake.cinema_url + "\">" + pancake.cinema + "</a></h2>\n";
+        content += "<ul id=\"" + pancake_location(pancake) + "\">\n";
         content += pancake_item(pancake);
-        content += '</ul>\n\n';
+        content += "</ul>\n\n";
         $("#main").append(content);
     }
     $("h1").fitText(1.5);
@@ -99,7 +99,7 @@ function parse_cinema(data) {
                     , status: session_data.SessionStatus
                 };
 
-                if(session_data.SessionStatus == 'onsale') {
+                if(session_data.SessionStatus == "onsale") {
                     pancake.url = session_data.SessionSalesURL;
                 }
 
