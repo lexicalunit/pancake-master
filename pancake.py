@@ -106,7 +106,7 @@ def html_times(pancakes):
         if p['status'] == PancakeStatus.ONSALE:
             times.append(html_link(p['url'], time_string(p['datetime'])))
         elif p['status'] == PancakeStatus.SOLDOUT:
-            times.append('<span style="text-decoration: strikethrough;">' + time_string(p['datetime']) + '</span>')
+            times.append('<span style="text-decoration: line-through;">' + time_string(p['datetime']) + '</span>')
         else: # p['status'] == PancakeStatus.NOTONSALE
             times.append(time_string(p['datetime']))
     return times
