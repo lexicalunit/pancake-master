@@ -53,7 +53,6 @@ table {
 
 body {
     background-color: #F2F2F2;
-    font-size: 100%;
 }
 
 #main {
@@ -71,16 +70,14 @@ body {
     border-top-right-radius: 15px;
     border-top: 8px solid #E2C162;
     color: #E9E5C8;
-    font-size: 500%;
     margin-top: 5%;
     padding: 2% 2% 0% 2%;
     text-shadow: 3px 3px 3px #4d4d4d;
 }
 
 #main h1 a {
-    color: #E9E5C8 !important;
-    text-decoration: none !important;
-
+    color: #E9E5C8;
+    text-decoration: none;
 }
 
 #main h2 {
@@ -88,14 +85,13 @@ body {
     border-left: 8px solid #E2C162;
     border-right: 8px solid #E2C162;
     color: #E9E5C8;
-    font-size: 200%;
     padding-bottom: 1%;
     padding-left: 3%;
 }
 
 #main h2 a {
-    color: #E9E5C8 !important;
-    text-decoration: none !important;
+    color: #E9E5C8;
+    text-decoration: none;
 }
 
 #main li {
@@ -145,7 +141,7 @@ body {
 }
 
 #footer a {
-    text-decoration: none !important;
+    text-decoration: none;
 }
 
 #status {
@@ -158,7 +154,7 @@ body {
 }
 
 #status a {
-    text-decoration: none !important;
+    text-decoration: none;
     color: black;
     font-size: small;
     font-family: sans-serif;
@@ -200,6 +196,7 @@ a.tooltip div:after {
       left: -48px;
 }
 
+/*
 @media only screen and (max-device-width: 480px) {
     h1 {
         font-size: 200%;
@@ -208,3 +205,4 @@ a.tooltip div:after {
         font-size: 150%;
     }
 }
+*/
