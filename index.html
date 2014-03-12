@@ -5,6 +5,7 @@
 <meta content="text/html; charset=utf-8" http-equiv="content-type" />
 <link rel="stylesheet" type="text/css" href="pancake.css" />
 <script type="text/javascript" src="jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="jquery.fittext.js"></script>
 <script type="text/javascript">
 status_number = 0;
 
@@ -67,6 +68,8 @@ function show_pancake(pancake) {
 
         $("#main").append(content);
     }
+    $("h1").fitText(1.5);
+    $("h2").fitText(3)
 }
 
 function parse_cinema(data) {
@@ -174,6 +177,11 @@ function build_market() {
 
     status_update(status_message + " done.", status_id);
 }
+
+$(document).ready(function() {
+    $("h1").fitText(1.5);
+    $("h2").fitText(3)
+});
 </script>
 </head>
 <body onload="build_market();">
