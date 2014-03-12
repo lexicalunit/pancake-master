@@ -196,7 +196,10 @@ a.tooltip div:after {
       left: -48px;
 }
 
-/*
+.soldout {
+    text-decoration: line-through;
+}
+
 @media only screen and (max-device-width: 480px) {
     h1 {
         font-size: 200%;
@@ -205,4 +208,3 @@ a.tooltip div:after {
         font-size: 150%;
     }
 }
-*/
