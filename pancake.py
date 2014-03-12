@@ -50,6 +50,13 @@ TIME_FORMAT = '%I:%M%p'
 TODAY = datetime.now()
 
 
+class PancakeStatus(object):
+    """Alamo Drafthouse API film statuses."""
+    NOTONSALE = 1
+    ONSALE = 2
+    SOLDOUT = 3
+
+
 class API(object):
     """Alamo Drafthouse API resources."""
     cinema_sessions_url = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx'
@@ -92,17 +99,20 @@ def html_cinema(cinema_url, cinema):
     return '<h2 style="margin: 0;padding: 0;border: 0;background-color: #A31E21;border-left: 8px solid #E2C162;border-right: 8px solid #E2C162;color: #E9E5C8;padding-bottom: 1%;padding-left: 3%;"><a href="{cinema_url}" style="color: #E9E5C8;text-decoration: none;">{cinema}</a></h2>\n'.format(cinema_url=cinema_url, cinema=cinema)
 
 
-def html_pancake_times(pancakes):
-    """Returns a list of pancake times, as styled HTML, with hyperlink if currently on sale."""
-    return [
-        html_link(p['url'], time_string(p['datetime']))
-        if p['onsale']
-        else time_string(p['datetime'])
-        for p in pancakes
-    ]
+def html_times(pancakes):
+    """Returns a list of pancake times, as pancake styled HTML."""
+    times = []
+    for p in pancakes:
+        if p['status'] == PancakeStatus.ONSALE:
+            times.append(html_link(p['url'], time_string(p['datetime'])))
+        elif p['status'] == PancakeStatus.SOLDOUT:
+            times.append('<span style="text-decoration: strikethrough;">' + time_string(p['datetime']) + '</span>')
+        else: # p['status'] == PancakeStatus.NOTONSALE
+            times.append(time_string(p['datetime']))
+    return times
 
 
-def html_pancake(pancakes):
+def html_digest(pancakes):
     """Returns pancake styled HTML digest of the given pancakes."""
     pancakes = sorted(pancakes, key=pancake_sort_key)
 
@@ -118,7 +128,7 @@ def html_pancake(pancakes):
 
         items = []
         for k, pancakes in groupby(pancakes, key=by_day):
-            items.append((date_string(k), ', '.join(html_pancake_times(pancakes))))
+            items.append((date_string(k), ', '.join(html_times(pancakes))))
 
         for item, n in zip(items, count(1)):
             li_style = 'margin: 0;padding: 0;border: 0;font-size: 125%;line-height: 150%;padding-left: 3%;padding-right: 3%;margin-left: 3%;margin-right: 3%;'
@@ -142,19 +152,25 @@ def html_pancake(pancakes):
         return content
 
 
-def pancake_text(pancakes):
+def text_digest(pancakes):
     """Returns a plain text digest of the given pancakes."""
     text = ''
     for pancake in sorted(pancakes, key=pancake_sort_key):
+        if pancake['status'] == PancakeStatus.ONSALE:
+            status = 'On sale now!'
+        elif pancake['status'] == PancakeStatus.SOLDOUT:
+            status = 'Sold out.'
+        else: # pancake['status'] == PancakeStatus.NOTONSALE
+            status = 'Not on sale yet.'
         params = (
             pancake['film'].encode('utf-8'),
             pancake['cinema'],
             date_string(pancake['datetime']),
             time_string(pancake['datetime']),
-            'On sale now!' if pancake['onsale'] else 'Not on sale.',
+            status,
         )
         text += '{}\n{}\n{}\n{}\n{}'.format(*params)
-        if pancake['onsale']:
+        if pancake['status'] == PancakeStatus.ONSALE:
             text += '\n{}'.format(pancake['url'])
         text += '\n\n'
     return text
@@ -165,7 +181,7 @@ def notify(pancakes, recipients):
     if not pancakes:
         return
 
-    plain = pancake_text(pancakes)
+    plain = text_digest(pancakes)
     log.info('digest:\n{}'.format(plain))
 
     if not recipients:
@@ -176,7 +192,7 @@ def notify(pancakes, recipients):
     msg['To'] = ', '.join(recipients)
     msg['From'] = recipients[0]
     msg.attach(MIMEText(plain, 'plain'))
-    msg.attach(MIMEText(html_pancake(pancakes), 'html'))
+    msg.attach(MIMEText(html_digest(pancakes), 'html'))
 
     try:
         s = smtplib.SMTP('localhost')
@@ -226,8 +242,15 @@ def query_pancakes(market_id):
         """Returns a datetime object representing the show time of the given pancake."""
         timestamp = '{} - {}'.format(str(date_str), str(time_str))
 
-        # Alamo Drafthouse API returns times with a 'p' appended for PM, otherwise assume AM
-        timestamp = timestamp[:-1] + 'PM' if timestamp.endswith('p') else timestamp[:-1] + 'AM'
+        if time_str == 'Midnight':
+            # Alamo Drafthouse API uses 'Midnight' instead of '12:00'
+            timestamp = timestamp[:-8] + '12:00AM'
+        elif time_str == 'Noon':
+            # Alamo Drafthouse API uses 'Noon' instead of '12:00p'
+            timestamp = timestamp[:-4] + '12:00PM'
+        else:
+            # Alamo Drafthouse API returns times with a 'p' appended for PM, otherwise assume AM
+            timestamp = timestamp[:-1] + 'PM' if timestamp.endswith('p') else timestamp[:-1] + 'AM'
 
         return PANCAKE_TIMEZONE.localize(datetime.strptime(timestamp, ALAMO_DATETIME_FORMAT))
 
@@ -254,7 +277,13 @@ def query_pancakes(market_id):
                     continue # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
-                    onsale = str(session_data['SessionStatus']) == 'onsale'
+                    session_status = str(session_data['SessionStatus'])
+                    if session_status == 'onsale':
+                        status = PancakeStatus.ONSALE
+                    elif session_status == 'soldout':
+                        status = PancakeStatus.SOLDOUT
+                    else: # session_status == 'notonsale'
+                        status = PancakeStatus.NOTONSALE
                     pancake = {
                         'film': string.capwords(film.replace('Master Pancake: ', '').lower()),
                         'film_uid': film_uid,
@@ -262,9 +291,9 @@ def query_pancakes(market_id):
                         'cinema': str(cinema),
                         'cinema_url': str(cinema_url),
                         'datetime': pancake_datetime(date_data['Date'], session_data['SessionTime']),
-                        'onsale': onsale,
+                        'status': status,
                     }
-                    if onsale:
+                    if status == PancakeStatus.ONSALE:
                         pancake['url'] = str(session_data['SessionSalesURL'])
                     pancakes.append(pancake)
     return pancakes
@@ -315,7 +344,9 @@ def update_pancakes(db, pancakes):
     for pancake in pancakes:
         key = pancake_key(pancake)
 
-        if key in db and db[key]['onsale'] != pancake['onsale'] and pancake['onsale']:
+        if (key in db
+            and db[key]['status'] != pancake['status']
+            and pancake['status'] != PancakeStatus.NOTONSALE):
             updated.append(pancake)
         elif key not in db:
             updated.append(pancake)
