@@ -117,6 +117,7 @@ body {
 #main li:nth-child(odd) {
     background-color: #FFFFFF;
 }
+
 #main li:nth-child(even) {
     background-color: #F5F5F5;
 }
@@ -125,6 +126,7 @@ body {
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
 }
+
 #main li:last-child {
     border-bottom-left-radius: 15px;
     border-bottom-right-radius: 15px;
