@@ -33,6 +33,7 @@ function daystr() {
 }
 
 function status(text) {
+    // TODO: Use underscore.js template to build statuses.
     window.status_number++;
     $("#statuses").append("<li class=\"status_item\" id=\"status_" + window.status_number + "\">" + text + "</li>");
     return window.status_number;
