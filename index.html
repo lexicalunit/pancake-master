@@ -6,8 +6,10 @@
 <link rel="stylesheet" type="text/css" href="pancake.css" />
 <script type="text/javascript" src="jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="jquery.fittext.js"></script>
+<script type="text/javascript" src="underscore-min.js"></script>
 <script type="text/javascript">
-status_number = 0;
+var status_number = 0;
+var pancakes = {};
 
 function capwords(text) {
     return text.replace(/\w\S*/g, function(txt) {
@@ -44,31 +46,18 @@ function pancake_location(pancake) {
     return (pancake.film_uid + " " + pancake.cinema).replace(/\s/g, "_");
 }
 
-function pancake_item(pancake) {
-    content = "";
-    if(pancake.status == "onsale") {
-        content += "<li>" + pancake.date + " - <a href=\"" + pancake.url + "\">" + pancake.time + "</a></li>\n";
-    } else if(pancake.status == "soldout") {
-        content += "<li><span class=\"soldout\">" + pancake.date + " - " + pancake.time + "</span></li>\n";
-    } else {
-        content += "<li>" + pancake.date + " - " + pancake.time + "</li>\n";
-    }
-    return content;
-}
-
 function show_pancake(pancake) {
-    // TODO: List multiple times for a show on the same day at the same location in one item.
-    if($("#" + pancake_location(pancake)).length) {
-        $("#" + pancake_location(pancake)).append(pancake_item(pancake));
-    } else {
-        var content = "";
-        content += "<h1><a href=\"https://drafthouse.com/uid/" + pancake.film_uid + "/\">" + pancake.film + "</h1>\n";
-        content += "<h2><a href=\"" + pancake.cinema_url + "\">" + pancake.cinema + "</a></h2>\n";
-        content += "<ul id=\"" + pancake_location(pancake) + "\">\n";
-        content += pancake_item(pancake);
-        content += "</ul>\n\n";
-        $("#main").append(content);
+    var location = pancake_location(pancake);
+
+    if(!(location in window.pancakes)) {
+        window.pancakes[location] = [];
     }
+
+    window.pancakes[location].push(pancake);
+
+    var template = _.template($("script.template").html());
+    $("#main").html(template(window.pancakes));
+
     $("h1").fitText(1.5);
     $("h2").fitText(3)
 }
@@ -82,7 +71,7 @@ function parse_cinema(data) {
         for(var j = 0; j < date_data.Films.length; j++) {
             var film_data = date_data.Films[j];
 
-            if(!film_data.Film.match(/pancake/i)) {
+            if(!film_data.Film.match(/pancake/i) || !film_data.Film.match(/master/i)) {
                 continue; // DO NOT WANT!
             }
 
@@ -97,6 +86,7 @@ function parse_cinema(data) {
                     , date: date_data.Date
                     , time: session_data.SessionTime
                     , status: session_data.SessionStatus
+                    , url: null
                 };
 
                 if(session_data.SessionStatus == "onsale") {
@@ -144,7 +134,7 @@ function parse_market(data) {
     var status_message = "Parsing Market Data...";
     var status_id = status(status_message);
 
-    var cinemas = new Array();
+    var cinemas = [];
     for(var i = 0; i < data.Market.Cinemas.length; i++) {
         var cinema = data.Market.Cinemas[i];
         var item = {
@@ -178,10 +168,26 @@ function build_market() {
     status_update(status_message + " done.", status_id);
 }
 
-$(document).ready(function() {
-    $("h1").fitText(1.5);
-    $("h2").fitText(3)
-});
+_.templateSettings.variable = "rc";
+</script>
+<script type="text/template" class="template">
+    <% _.each(rc, function(pancakes, location) { %>
+        <h1><%- pancakes[0].film %></h1>
+        <h2><%- pancakes[0].cinema %></h2>
+        <ul>
+            <% _.each(pancakes, function(pancake) { %>
+                <li>
+                <% if(pancake.status == "onsale") { %>
+                    <%- pancake.date %> - <a href="<%= pancake.url %>"><%- pancake.time %></a>
+                <% } else if(pancake.status == "soldout") { %>
+                    <span class="soldout"><%- pancake.date + " - " + pancake.time %></span>
+                <% } else { %>
+                    <%- pancake.date + " - " + pancake.time %>
+                <% } %>
+                </li>
+            <% }); %>
+        </ul>
+    <% }); %>
 </script>
 </head>
 <body onload="build_market();">
