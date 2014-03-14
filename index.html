@@ -170,6 +170,23 @@ function build_market() {
 }
 
 _.templateSettings.variable = "rc";
+
+function pancake_item(pancake) {
+    var span = document.createElement('span');
+    span.className = pancake.status;
+
+    if(pancake.status == "onsale") {
+        var a = document.createElement('a');
+        a.href = pancake.url;
+        a.innerHTML = pancake.time;
+        span.innerHTML = a.outerHTML;
+    } else {
+        span.innerHTML = pancake.time;
+    }
+
+    return span.outerHTML;
+}
+
 </script>
 <script type="text/template" class="template">
     <% _.each(rc, function(pancakes, location) { %>
@@ -177,15 +194,7 @@ _.templateSettings.variable = "rc";
         <h2><a href="<%= pancakes[0].cinema_url %>"><%- pancakes[0].cinema %></a></h2>
         <ul>
             <% _.each(pancakes, function(pancake) { %>
-                <li>
-                <% if(pancake.status == "onsale") { %>
-                    <%- pancake.date %> - <a href="<%= pancake.url %>"><%- pancake.time %></a>
-                <% } else if(pancake.status == "soldout") { %>
-                    <span class="soldout"><%- pancake.date + " - " + pancake.time %></span>
-                <% } else { %>
-                    <%- pancake.date + " - " + pancake.time %>
-                <% } %>
-                </li>
+                <li><%- pancake.date %> - <%- pancake_item(pancake) %></li>
             <% }); %>
         </ul>
     <% }); %>
