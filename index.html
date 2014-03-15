@@ -33,9 +33,15 @@ function daystr() {
 }
 
 function status(text) {
-    // TODO: Use underscore.js template to build statuses.
     window.status_number++;
-    $("#statuses").append("<li class=\"status_item\" id=\"status_" + window.status_number + "\">" + text + "</li>");
+
+    var li = document.createElement('li');
+    li.className = "status_item";
+    li.id = "status_" + window.status_number;
+    li.innerHTML = text;
+
+    $("#statuses").append(li);
+
     return window.status_number;
 }
 
@@ -77,12 +83,8 @@ function parse_cinema(data) {
                     , date: date_data.Date
                     , time: session_data.SessionTime
                     , status: session_data.SessionStatus
-                    , url: null
+                    , url: session_data.SessionStatus == "onsale" ? session_data.SessionSalesURL : null
                 };
-
-                if(session_data.SessionStatus == "onsale") {
-                    pancake.url = session_data.SessionSalesURL;
-                }
 
                 show_pancake(pancake);
             }
