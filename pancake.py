@@ -287,14 +287,12 @@ def query_pancakes(market_id):
                     pancake = {
                         'film': string.capwords(film.replace('Master Pancake: ', '').lower()),
                         'film_uid': film_uid,
-                        'url': None,
+                        'url': str(session_data['SessionSalesURL']) if status == PancakeStatus.ONSALE else None,
                         'cinema': str(cinema),
                         'cinema_url': str(cinema_url),
                         'datetime': pancake_datetime(date_data['Date'], session_data['SessionTime']),
                         'status': status,
                     }
-                    if status == PancakeStatus.ONSALE:
-                        pancake['url'] = str(session_data['SessionSalesURL'])
                     pancakes.append(pancake)
     return pancakes
 
