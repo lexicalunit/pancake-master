@@ -9,7 +9,7 @@
 <script type="text/javascript" src="underscore-min.js"></script>
 <script type="text/javascript">
 var status_number = 0;
-var pancakes = {};
+var pancakes = [];
 
 function capwords(text) {
     return text.replace(/\w\S*/g, function(txt) {
@@ -43,18 +43,8 @@ function status_update(text, number) {
     $("#status_" + number).html(text);
 }
 
-function pancake_location(pancake) {
-    return (pancake.film_uid + " " + pancake.cinema).replace(/\s/g, "_");
-}
-
 function show_pancake(pancake) {
-    var location = pancake_location(pancake);
-
-    if(!(location in window.pancakes)) {
-        window.pancakes[location] = [];
-    }
-
-    window.pancakes[location].push(pancake);
+    window.pancakes.push(pancake);
 
     var template = _.template($("script.template").html());
     $("#main").html(template(window.pancakes));
@@ -169,9 +159,13 @@ function build_market() {
     status_update(status_message + " done.", status_id);
 }
 
-_.templateSettings.variable = "rc";
+function by_location(pancakes) {
+    return _.groupBy(pancakes, function(pancake) {
+        return [pancake.film, pancake.cinema];
+    });
+}
 
-function pancake_item(pancake) {
+function pancake_time(pancake) {
     var span = document.createElement('span');
     span.className = pancake.status;
 
@@ -187,17 +181,24 @@ function pancake_item(pancake) {
     return span.outerHTML;
 }
 
+function pancake_times(pancakes) {
+    return pancakes.map(function(pancake) {
+        return pancake_time(pancake);
+    });
+}
+
+_.templateSettings.variable = "rc";
 </script>
 <script type="text/template" class="template">
-    <% _.each(rc, function(pancakes, location) { %>
+    <% _.each(by_location(rc), function(pancakes, location) { %>
         <h1><a href="https://drafthouse.com/uid/<%= pancakes[0].film_uid %>"><%- pancakes[0].film %></a></h1>
         <h2><a href="<%= pancakes[0].cinema_url %>"><%- pancakes[0].cinema %></a></h2>
         <ul>
-            <% _.each(pancakes, function(pancake) { %>
-                <li><%- pancake.date %> - <%- pancake_item(pancake) %></li>
+            <% _.each(_.groupBy(pancakes, 'date'), function(pancakes, date) { %>
+                <li><%- date %> - <%= pancake_times(pancakes).join(', ') %></li>
             <% }); %>
         </ul>
-    <% }); %>
+    <% }) %>
 </script>
 </head>
 <body onload="build_market();">
