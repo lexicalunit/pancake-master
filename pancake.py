@@ -142,13 +142,6 @@ PANCAKE_STYLE = {
 }
 
 
-class PancakeStatus(object):
-    """Alamo Drafthouse API film statuses."""
-    NOTONSALE = 1
-    ONSALE = 2
-    SOLDOUT = 3
-
-
 class API(object):
     """Alamo Drafthouse API resources."""
     cinema_sessions_url = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx'
@@ -176,33 +169,22 @@ def pancake_sort_key(pancake):
     return pancake['film'], pancake['cinema'], pancake['datetime']
 
 
-def html_link(url, text):
-    """Returns pancake styled HTML for hyperlink."""
-    return '<a href="{url}">{text}</a>'.format(url=url, text=text)
+def html_showtimes(pancakes):
+    """Returns a list of pancake showtimes, as pancake HTML."""
+    showtimes = []
+    for pancake in pancakes:
+        soup = BeautifulSoup('<span></span>')
+        soup.span['class'] = pancake['status']
 
+        if pancake['status'] == 'onsale':
+            anchor = soup.new_tag('a', href=pancake['url'])
+            anchor.append(time_string(pancake['datetime']))
+            soup.span.append(anchor)
+        else: # pancake['status'] == 'soldout' or pancake['status'] == 'notonsale'
+            soup.span.append(time_string(pancake['datetime']))
 
-def html_film(film_uid, film):
-    """Returns pancake styled HTML for film header."""
-    return '<h1><a href="https://drafthouse.com/uid/{film_uid}/">{film}</a></h1>'.format(film_uid=film_uid, film=film)
-
-
-def html_cinema(cinema_url, cinema):
-    """Returns pancake styled HTML for cinema header."""
-    return '<h2><a href="{cinema_url}">{cinema}</a></h2>'.format(cinema_url=cinema_url, cinema=cinema)
-
-
-def html_times(pancakes):
-    """Returns a list of pancake times, as pancake styled HTML."""
-    times = []
-    for p in pancakes:
-        if p['status'] == PancakeStatus.ONSALE:
-            time = '<span class="onsale">' + html_link(p['url'], time_string(p['datetime'])) + '</span>'
-        elif p['status'] == PancakeStatus.SOLDOUT:
-            time = '<span class="soldout">' + time_string(p['datetime']) + '</span>'
-        else: # p['status'] == PancakeStatus.NOTONSALE
-            time = '<span class="notonsale">' + time_string(p['datetime']) + '</span>'
-        times.append(time)
-    return times
+        showtimes.append(str(soup))
+    return showtimes
 
 
 def apply_style(tag, style):
@@ -239,31 +221,50 @@ def html_digest(pancakes):
     by_film_and_cinema = lambda p: (p['film_uid'], p['film'], p['cinema_url'], p['cinema'])
     by_day = lambda p: p['datetime'].date()
 
-    content = ''
-    for k, pancakes in groupby(pancakes, key=by_film_and_cinema):
-        content += html_film(k[0], k[1])
-        content += html_cinema(k[2], k[3])
+    soup = BeautifulSoup('')
+    for key, pancakes in groupby(pancakes, key=by_film_and_cinema):
+        film_uid, film, cinema_url, cinema = key
 
-        items = []
-        for k, pancakes in groupby(pancakes, key=by_day):
-            items.append((date_string(k), ', '.join(html_times(pancakes))))
+        film_heading = BeautifulSoup('<h1><a></a></h1>')
+        film_heading.a['href'] = 'https://drafthouse.com/uid/' + film_uid
+        film_heading.a.append(film)
 
-        content += '<ul>'
-        for item, n in zip(items, count(1)):
+        cinema_heading = BeautifulSoup('<h2><a></a></h2>')
+        cinema_heading.a['href'] = cinema_url
+        cinema_heading.a.append(cinema)
+
+        item_data = []
+        for day, pancakes in groupby(pancakes, key=by_day):
+            item_data.append((date_string(day), ', '.join(html_showtimes(pancakes))))
+
+        item_list = BeautifulSoup('<ul></ul>')
+        for data, n in zip(item_data, count(1)):
+            day, showtimes = data
+
+            item = item_list.new_tag('li')
+
             if n % 2 == 0:
-                li_style = 'background-color: #FFFFFF;'
+                item['style'] = 'background-color: #FFFFFF;'
             else:
-                li_style = 'background-color: #F5F5F5;'
+                item['style'] = 'background-color: #F5F5F5;'
+
             if n == 1:
-                li_style += 'border-top-left-radius: 15px;border-top-right-radius: 15px;'
-            if n == len(items):
-                li_style += 'border-bottom-left-radius: 15px;border-bottom-right-radius: 15px;'
-            content += '<li style="{li_style}">{day} - {links}</li>\n'.format(li_style=li_style, day=item[0], links=item[1])
-        content += '</ul>'
+                item['style'] += 'border-top-left-radius: 15px;border-top-right-radius: 15px;'
+
+            if n == len(item_data):
+                item['style'] += 'border-bottom-left-radius: 15px;border-bottom-right-radius: 15px;'
+
+            item_content = '<span>{day} - {showtimes}</span>'.format(day=day, showtimes=showtimes)
+            item.append(BeautifulSoup(item_content))
+            item_list.ul.append(item)
+
+        soup.append(film_heading)
+        soup.append(cinema_heading)
+        soup.append(item_list)
 
     try:
         template = open(TEMPLATE_FILE, 'r').read()
-        return styled(template.format(content=content), PANCAKE_STYLE)
+        return styled(template.format(content=str(soup)), PANCAKE_STYLE)
     except:
         log.warn('could not load HTML template file, generating incomplete HTML...')
         return content
@@ -273,11 +274,11 @@ def text_digest(pancakes):
     """Returns a plain text digest of the given pancakes."""
     text = ''
     for pancake in sorted(pancakes, key=pancake_sort_key):
-        if pancake['status'] == PancakeStatus.ONSALE:
+        if pancake['status'] == 'onsale':
             status = 'On sale now!'
-        elif pancake['status'] == PancakeStatus.SOLDOUT:
+        elif pancake['status'] == 'soldout':
             status = 'Sold out.'
-        else: # pancake['status'] == PancakeStatus.NOTONSALE
+        else: # pancake['status'] == 'notonsale'
             status = 'Not on sale yet.'
         params = (
             pancake['film'].encode('utf-8'),
@@ -287,7 +288,7 @@ def text_digest(pancakes):
             status,
         )
         text += '{}\n{}\n{}\n{}\n{}'.format(*params)
-        if pancake['status'] == PancakeStatus.ONSALE:
+        if pancake['status'] == 'onsale':
             text += '\n{}'.format(pancake['url'])
         text += '\n\n'
     return text
@@ -394,17 +395,11 @@ def query_pancakes(market_id):
                     continue # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
-                    session_status = str(session_data['SessionStatus'])
-                    if session_status == 'onsale':
-                        status = PancakeStatus.ONSALE
-                    elif session_status == 'soldout':
-                        status = PancakeStatus.SOLDOUT
-                    else: # session_status == 'notonsale'
-                        status = PancakeStatus.NOTONSALE
+                    status = str(session_data['SessionStatus'])
                     pancake = {
                         'film': string.capwords(film.replace('Master Pancake: ', '').lower()),
                         'film_uid': film_uid,
-                        'url': str(session_data['SessionSalesURL']) if status == PancakeStatus.ONSALE else None,
+                        'url': str(session_data['SessionSalesURL']) if status == 'onsale' else None,
                         'cinema': str(cinema),
                         'cinema_url': str(cinema_url),
                         'datetime': pancake_datetime(date_data['Date'], session_data['SessionTime']),
@@ -461,7 +456,7 @@ def update_pancakes(db, pancakes):
 
         if (key in db
             and db[key]['status'] != pancake['status']
-            and pancake['status'] != PancakeStatus.NOTONSALE):
+            and pancake['status'] != 'notonsale'):
             updated.append(pancake)
         elif key not in db:
             updated.append(pancake)
@@ -486,6 +481,7 @@ if __name__ == '__main__':
     try:
         recipients = [line.strip() for line in open(RECIPIENTS_FILE)]
     except:
+        recipients = None
         log.warn('no email recipients found, not sending email notifications...')
 
     try:
