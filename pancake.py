@@ -12,6 +12,7 @@ import smtplib
 import string
 import urllib2
 
+from bs4 import BeautifulSoup # third party
 from datetime import datetime, time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -48,6 +49,97 @@ ALAMO_DATETIME_FORMAT = '%A, %B %d, %Y - %I:%M%p'
 DATE_FORMAT = '%A, %B %d, %Y'
 TIME_FORMAT = '%I:%M%p'
 TODAY = datetime.now()
+
+PANCAKE_STYLE = {
+    'html': {
+        'margin': '0',
+        'padding': '0',
+        'border': '0',
+    },
+    'body': {
+        'background-color': '#F2F2F2',
+        'font-family': 'sans-serif',
+    },
+    'a': {
+        'margin': '0',
+        'padding': '0',
+        'border': '0',
+        'color': 'inherit',
+        'text-decoration': 'none',
+    },
+    'ul': {
+        'background-color': '#A31E21',
+        'margin': '0',
+        'padding': '2%',
+        'border-top': '0',
+        'border-right': '8px solid #E2C162',
+        'border-bottom': '8px solid #E2C162',
+        'border-left': '8px solid #E2C162',
+        'border-bottom-left-radius': '15px',
+        'border-bottom-right-radius': '15px',
+        'list-style-type': 'none',
+        'list-style': 'none',
+    },
+    'h1': {
+        'color': '#E9E5C8',
+        'background-color': '#A31E21',
+        'margin': '5% 0 0 0',
+        'padding': '2% 2% 0% 2%',
+        'border-top': '8px solid #E2C162',
+        'border-right': '8px solid #E2C162',
+        'border-bottom': '0',
+        'border-left': '8px solid #E2C162',
+        'border-top-left-radius': '15px',
+        'border-top-right-radius': '15px',
+        'text-shadow': '3px 3px 3px #4d4d4d',
+    },
+    'h2': {
+        'color': '#E9E5C8',
+        'background-color': '#A31E21',
+        'margin': '0',
+        'padding': '0 0 1% 3%',
+        'border-top': '0',
+        'border-right': '8px solid #E2C162',
+        'border-bottom': '0',
+        'border-left': '8px solid #E2C162',
+    },
+    'li': {
+        'margin': '0 3% 0 3%',
+        'padding': '0 3% 0 3%',
+        'border': '0',
+        'font-size': '125%',
+        'line-height': '150%',
+    },
+    '.onsale': {
+        'color': 'blue',
+    },
+    '.soldout': {
+        'text-decoration': 'line-through',
+    },
+    '#footer': {
+        'width': '80%',
+        'margin-top': '0',
+        'margin-right': 'auto',
+        'margin-bottom': '0',
+        'margin-left': 'auto',
+        'padding': '0',
+        'border-top': '2em solid #F2F2F2',
+        'border-right': '0',
+        'border-bottom': '2em solid #F2F2F2',
+        'border-left': '0',
+        'text-align': 'center',
+        'line-height': '150%',
+    },
+    '#main': {
+        'width': '80%',
+        'padding': '0',
+        'margin-top': '0',
+        'margin-right': 'auto',
+        'margin-bottom': '0',
+        'margin-left': 'auto',
+        'border': '0',
+    },
+}
 
 
 class PancakeStatus(object):
@@ -86,17 +178,17 @@ def pancake_sort_key(pancake):
 
 def html_link(url, text):
     """Returns pancake styled HTML for hyperlink."""
-    return '<a href="{url}" style="margin: 0;padding: 0;border: 0;text-decoration: none;">{text}</a>'.format(url=url, text=text)
+    return '<a href="{url}">{text}</a>'.format(url=url, text=text)
 
 
 def html_film(film_uid, film):
     """Returns pancake styled HTML for film header."""
-    return '<h1 style="margin: 0;padding: 2% 2% 0% 2%;border: 0;background-color: #A31E21;border-left: 8px solid #E2C162;border-right: 8px solid #E2C162;border-top-left-radius: 15px;border-top-right-radius: 15px;border-top: 8px solid #E2C162;color: #E9E5C8;margin-top: 5%;text-shadow: 3px 3px 3px #4d4d4d;"><a href="https://drafthouse.com/uid/{film_uid}/" style="color: #E9E5C8;text-decoration: none;">{film}</a></h1>\n'.format(film_uid=film_uid, film=film)
+    return '<h1><a href="https://drafthouse.com/uid/{film_uid}/">{film}</a></h1>'.format(film_uid=film_uid, film=film)
 
 
 def html_cinema(cinema_url, cinema):
     """Returns pancake styled HTML for cinema header."""
-    return '<h2 style="margin: 0;padding: 0;border: 0;background-color: #A31E21;border-left: 8px solid #E2C162;border-right: 8px solid #E2C162;color: #E9E5C8;padding-bottom: 1%;padding-left: 3%;"><a href="{cinema_url}" style="color: #E9E5C8;text-decoration: none;">{cinema}</a></h2>\n'.format(cinema_url=cinema_url, cinema=cinema)
+    return '<h2><a href="{cinema_url}">{cinema}</a></h2>'.format(cinema_url=cinema_url, cinema=cinema)
 
 
 def html_times(pancakes):
@@ -104,12 +196,39 @@ def html_times(pancakes):
     times = []
     for p in pancakes:
         if p['status'] == PancakeStatus.ONSALE:
-            times.append(html_link(p['url'], time_string(p['datetime'])))
+            time = '<span class="onsale">' + html_link(p['url'], time_string(p['datetime'])) + '</span>'
         elif p['status'] == PancakeStatus.SOLDOUT:
-            times.append('<span style="text-decoration: line-through;">' + time_string(p['datetime']) + '</span>')
+            time = '<span class="soldout">' + time_string(p['datetime']) + '</span>'
         else: # p['status'] == PancakeStatus.NOTONSALE
-            times.append(time_string(p['datetime']))
+            time = '<span class="notonsale">' + time_string(p['datetime']) + '</span>'
+        times.append(time)
     return times
+
+
+def apply_style(tag, style):
+    """Applies the given CSS style to the given tag."""
+    if 'style' not in tag.attrs:
+        tag['style'] = ''
+    s = ''.join('{}: {};'.format(k, v) for k, v in style.items())
+    tag['style'] += s
+
+
+def styled(html, style):
+    """Returns inline CSS styled HTML."""
+    soup = BeautifulSoup(html)
+    for tag in soup.find_all(True):
+        if tag.name in style:
+            apply_style(tag, style[tag.name])
+        if 'class' in tag.attrs:
+            for tag_class in tag['class']:
+                key = '.' + tag_class
+                if key in style:
+                    apply_style(tag, style[key])
+        if 'id' in tag.attrs:
+            key = '#' + tag['id']
+            if key in style:
+                apply_style(tag, style[key])
+    return str(soup.prettify())
 
 
 def html_digest(pancakes):
@@ -124,29 +243,27 @@ def html_digest(pancakes):
     for k, pancakes in groupby(pancakes, key=by_film_and_cinema):
         content += html_film(k[0], k[1])
         content += html_cinema(k[2], k[3])
-        content += '<ul style="margin: 0;padding: 2%;border: 0;list-style: none;background-color: #A31E21;border-bottom-left-radius: 15px;border-bottom-right-radius: 15px;border-bottom: 8px solid #E2C162;border-left: 8px solid #E2C162;border-right: 8px solid #E2C162;list-style-type: none;">\n'
 
         items = []
         for k, pancakes in groupby(pancakes, key=by_day):
             items.append((date_string(k), ', '.join(html_times(pancakes))))
 
+        content += '<ul>'
         for item, n in zip(items, count(1)):
-            li_style = 'margin: 0;padding: 0;border: 0;font-size: 125%;line-height: 150%;padding-left: 3%;padding-right: 3%;margin-left: 3%;margin-right: 3%;'
             if n % 2 == 0:
-                li_style += 'background-color: #FFFFFF;'
+                li_style = 'background-color: #FFFFFF;'
             else:
-                li_style += 'background-color: #F5F5F5;'
+                li_style = 'background-color: #F5F5F5;'
             if n == 1:
                 li_style += 'border-top-left-radius: 15px;border-top-right-radius: 15px;'
             if n == len(items):
                 li_style += 'border-bottom-left-radius: 15px;border-bottom-right-radius: 15px;'
-            content += '    <li style="{li_style}">{day} - {links}</li>\n'.format(li_style=li_style, day=item[0], links=item[1])
-
-        content += '</ul>\n\n'
+            content += '<li style="{li_style}">{day} - {links}</li>\n'.format(li_style=li_style, day=item[0], links=item[1])
+        content += '</ul>'
 
     try:
         template = open(TEMPLATE_FILE, 'r').read()
-        return template.format(content=content)
+        return styled(template.format(content=content), PANCAKE_STYLE)
     except:
         log.warn('could not load HTML template file, generating incomplete HTML...')
         return content
