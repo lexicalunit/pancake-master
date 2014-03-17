@@ -6,7 +6,7 @@ Python script that searches for Master Pancake showtimes in Austin. Run it perio
 index.html
 ====
 
-Static HTML+AJAX solution which fetches and displays the most up-to-date Master Pancake information. Deploy to a webserver with dependencies pancake.css and jquery.
+Static HTML+AJAX solution which fetches and displays the most up-to-date Master Pancake information. Deploy to a webserver with dependencies pancake.css, jquery, and underscore.
 
 Preview
 ====
