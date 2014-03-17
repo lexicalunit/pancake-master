@@ -372,7 +372,6 @@ def parse_datetime(date_str, time_str):
 
 def query_pancakes(market_id):
     """Queries the Alamo Drafthouse API for the list of pancakes in a given market."""
-
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
         try:
