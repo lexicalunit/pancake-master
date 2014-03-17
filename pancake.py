@@ -353,24 +353,25 @@ def sanitize_film_title(title):
     return str(title.replace(u'\u2019', "'").replace(u'\u2018', ''))
 
 
+def parse_datetime(date_str, time_str):
+    """Returns a datetime object representing the show time of the given Alamo Drafthouse API's date and time."""
+    timestamp = '{} - {}'.format(str(date_str), str(time_str))
+
+    if time_str == 'Midnight':
+        # Alamo Drafthouse API uses 'Midnight' instead of '12:00'
+        timestamp = timestamp[:-8] + '12:00AM'
+    elif time_str == 'Noon':
+        # Alamo Drafthouse API uses 'Noon' instead of '12:00p'
+        timestamp = timestamp[:-4] + '12:00PM'
+    else:
+        # Alamo Drafthouse API returns times with a 'p' appended for PM, otherwise assume AM
+        timestamp = timestamp[:-1] + 'PM' if timestamp.endswith('p') else timestamp[:-1] + 'AM'
+
+    return PANCAKE_TIMEZONE.localize(datetime.strptime(timestamp, ALAMO_DATETIME_FORMAT))
+
+
 def query_pancakes(market_id):
     """Queries the Alamo Drafthouse API for the list of pancakes in a given market."""
-
-    def pancake_datetime(date_str, time_str):
-        """Returns a datetime object representing the show time of the given pancake."""
-        timestamp = '{} - {}'.format(str(date_str), str(time_str))
-
-        if time_str == 'Midnight':
-            # Alamo Drafthouse API uses 'Midnight' instead of '12:00'
-            timestamp = timestamp[:-8] + '12:00AM'
-        elif time_str == 'Noon':
-            # Alamo Drafthouse API uses 'Noon' instead of '12:00p'
-            timestamp = timestamp[:-4] + '12:00PM'
-        else:
-            # Alamo Drafthouse API returns times with a 'p' appended for PM, otherwise assume AM
-            timestamp = timestamp[:-1] + 'PM' if timestamp.endswith('p') else timestamp[:-1] + 'AM'
-
-        return PANCAKE_TIMEZONE.localize(datetime.strptime(timestamp, ALAMO_DATETIME_FORMAT))
 
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
@@ -402,7 +403,7 @@ def query_pancakes(market_id):
                         'url': str(session_data['SessionSalesURL']) if status == 'onsale' else None,
                         'cinema': str(cinema),
                         'cinema_url': str(cinema_url),
-                        'datetime': pancake_datetime(date_data['Date'], session_data['SessionTime']),
+                        'datetime': parse_datetime(date_data['Date'], session_data['SessionTime']),
                         'status': status,
                     }
                     pancakes.append(pancake)
@@ -469,6 +470,7 @@ def prune_database(db):
     for key, pancake in db.items():
         if pancake['datetime'].date() < TODAY.date():
             del db[key]
+
 
 if __name__ == '__main__':
     try:
