@@ -139,6 +139,20 @@ PANCAKE_STYLE = {
         'margin-left': 'auto',
         'border': '0',
     },
+    '.pancake_item:nth-child(odd)': {
+        'background-color': '#FFFFFF',
+    },
+    '.pancake_item:nth-child(even)': {
+        'background-color': '#F5F5F5',
+    },
+    '.pancake_item:first-child': {
+        'border-top-left-radius': '15px',
+        'border-top-right-radius': '15px',
+    },
+    '.pancake_item:last-child': {
+        'border-bottom-left-radius': '15px',
+        'border-bottom-right-radius': '15px',
+    },
 }
 
 
@@ -242,17 +256,19 @@ def html_digest(pancakes):
             day, showtimes = data
 
             item = item_list.new_tag('li')
+            item['class'] = 'pancake_item'
 
+            # TODO: automatically apply pseudo-class styles inside styled() function
             if n % 2 == 0:
-                item['style'] = 'background-color: #FFFFFF;'
+                apply_style(item, PANCAKE_STYLE['.pancake_item:nth-child(odd)'])
             else:
-                item['style'] = 'background-color: #F5F5F5;'
+                apply_style(item, PANCAKE_STYLE['.pancake_item:nth-child(even)'])
 
             if n == 1:
-                item['style'] += 'border-top-left-radius: 15px;border-top-right-radius: 15px;'
+                apply_style(item, PANCAKE_STYLE['.pancake_item:first-child'])
 
             if n == len(item_data):
-                item['style'] += 'border-bottom-left-radius: 15px;border-bottom-right-radius: 15px;'
+                apply_style(item, PANCAKE_STYLE['.pancake_item:last-child'])
 
             item_content = '<span>{day} - {showtimes}</span>'.format(day=day, showtimes=showtimes)
             item.append(BeautifulSoup(item_content))
@@ -385,7 +401,9 @@ def query_pancakes(market_id):
     """Queries the Alamo Drafthouse API for the list of pancakes in a given market."""
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
-        data = query(API.cinema_sessions_url, cinemaid=format_uid(cinema_id), callback='callback')
+        data = query(API.cinema_sessions_url
+            , cinemaid=format_uid(cinema_id)
+            , callback='whatever') # sadly, this resource *requires* JSONP callback parameter
 
         for date_data in data['Cinema']['Dates']:
             for film_data in date_data['Films']:
