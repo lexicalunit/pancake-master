@@ -8,16 +8,16 @@ import json
 import logging
 import pickle
 import re
+import requests # third party
 import smtplib
 import string
-import urllib2
 
 from bs4 import BeautifulSoup # third party
 from datetime import datetime, time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from itertools import groupby, count
-from pytz import timezone # third party; is there a standard solution?
+from pytz import timezone # third party
 
 
 # setup logging to pancake.log and console
@@ -322,30 +322,9 @@ def notify(pancakes, recipients):
         raise
 
 
-def parse_data(data):
-    """Parses out and returns the data from a Alamo Drafthouse API data response."""
-    return json.loads(re.search('.*?({.*)\)', data).group(1))
-
-
-def query_cinemas(market_id):
-    """Queries the Alamo Drafthouse API for the list of cinemas in a given market."""
-    try:
-        params = {
-            'url': API.market_sessions_url,
-            'date': datetime.strftime(TODAY, '%Y%m%d'),
-            'market_id': market_id,
-        }
-        url = '{url}?&date={date}&marketid={market_id:04.0f}&callback=callback'.format(**params)
-        r = urllib2.urlopen(url).read()
-        data = parse_data(r)
-    except Exception as e:
-        log.error('market sessions fail: {}'.format(e))
-        raise
-
-    cinemas = []
-    for cinema in data['Market']['Cinemas']:
-        cinemas.append((int(cinema['CinemaId']), str(cinema['CinemaName']), str(cinema['CinemaURL'])))
-    return cinemas
+def format_uid(uid):
+    """Returns uid formatted in the way that the Alamo Drafthouse API expects."""
+    return '{:04.0f}'.format(uid)
 
 
 def sanitize_film_title(title):
@@ -370,21 +349,43 @@ def parse_datetime(date_str, time_str):
     return PANCAKE_TIMEZONE.localize(datetime.strptime(timestamp, ALAMO_DATETIME_FORMAT))
 
 
+def query(url, **kwargs):
+    """Queries given Alamo Drafthouse API url using all kwargs as API parameters."""
+    is_jsonp = 'callback' in kwargs
+
+    try:
+        resp = requests.get(url, params=kwargs)
+
+        if is_jsonp:
+            jsonp = resp.text
+            data = json.loads(jsonp[jsonp.index("(") + 1 : jsonp.rindex(")")])
+        else:
+            data = resp.json()
+    except Exception as e:
+        log.error('market sessions fail: {}'.format(e))
+        raise
+
+    if 'msg' in data:
+        raise Exception('Alamo Drafthouse API error: {}'.format(data['msg']))
+        
+    return data
+
+
+def query_cinemas(market_id):
+    """Queries the Alamo Drafthouse API for the list of cinemas in a given market."""
+    data = query(API.market_sessions_url, date=datetime.strftime(TODAY, '%Y%m%d'), marketid=format_uid(market_id))
+
+    cinemas = []
+    for cinema in data['Market']['Cinemas']:
+        cinemas.append((int(cinema['CinemaId']), str(cinema['CinemaName']), str(cinema['CinemaURL'])))
+    return cinemas
+
+
 def query_pancakes(market_id):
     """Queries the Alamo Drafthouse API for the list of pancakes in a given market."""
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
-        try:
-            params = {
-                'url': API.cinema_sessions_url,
-                'cinema_id': cinema_id,
-            }
-            url = '{url}?cinemaid={cinema_id:04.0f}&callback=callback'.format(**params)
-            r = urllib2.urlopen(url).read()
-            data = parse_data(r)
-        except Exception as e:
-            log.error('cinema sessions fail: {}'.format(e))
-            raise
+        data = query(API.cinema_sessions_url, cinemaid=format_uid(cinema_id), callback='callback')
 
         for date_data in data['Cinema']['Dates']:
             for film_data in date_data['Films']:
@@ -455,7 +456,7 @@ def update_pancakes(db, pancakes):
         key = pancake_key(pancake)
 
         if key in db:
-            if db[key]['status'] = 'notonsale' and pancake['status'] == 'onsale':
+            if db[key]['status'] == 'notonsale'  and pancake['status'] == 'onsale':
                 updated.append(pancake)
         else:
             updated.append(pancake)
