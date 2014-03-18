@@ -455,7 +455,7 @@ def update_pancakes(db, pancakes):
         key = pancake_key(pancake)
 
         if key in db:
-            if db[key]['status'] != pancake['status'] and pancake['status'] == 'onsale':
+            if db[key]['status'] = 'notonsale' and pancake['status'] == 'onsale':
                 updated.append(pancake)
         else:
             updated.append(pancake)
