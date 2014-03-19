@@ -46,7 +46,7 @@ PANCAKE_TIMEZONE = timezone('US/Central') # Austin is US/Central
 PICKLE_FILE = 'pancake.pickle'
 RECIPIENTS_FILE = 'pancake.list'
 STYLE_FILE = 'pancake.css'
-TEMPLATE_FILE = 'pancake.html'
+TEMPLATE_FILE = 'pancake.html.template'
 
 ALAMO_DATETIME_FORMAT = '%A, %B %d, %Y - %I:%M%p'
 DATE_FORMAT = '%A, %B %d, %Y'
