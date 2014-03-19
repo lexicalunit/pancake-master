@@ -3,7 +3,9 @@
 <head>
 <title>Pancake Master</title>
 <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+<link rel="stylesheet" type="text/css" href="reset.css" />
 <link rel="stylesheet" type="text/css" href="pancake.css" />
+<link rel="stylesheet" type="text/css" href="pancake-status.css" />
 <script type="text/javascript" src="jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="jquery.fittext.js"></script>
 <script type="text/javascript" src="underscore-min.js"></script>
@@ -193,11 +195,11 @@ _.templateSettings.variable = "rc";
 </script>
 <script type="text/template" class="template">
     <% _.each(by_location(rc), function(pancakes, location) { %>
-        <h1><a href="https://drafthouse.com/uid/<%= pancakes[0].film_uid %>"><%- pancakes[0].film %></a></h1>
-        <h2><a href="<%= pancakes[0].cinema_url %>"><%- pancakes[0].cinema %></a></h2>
-        <ul>
+        <h1 class="film_heading"><a href="https://drafthouse.com/uid/<%= pancakes[0].film_uid %>"><%- pancakes[0].film %></a></h1>
+        <h2 class="cinema_heading"><a href="<%= pancakes[0].cinema_url %>"><%- pancakes[0].cinema %></a></h2>
+        <ul class="pancake_items">
             <% _.each(_.groupBy(pancakes, 'date'), function(pancakes, date) { %>
-                <li><%- date %> - <%= pancake_times(pancakes).join(', ') %></li>
+                <li class="pancake_item"><%- date %> - <%= pancake_times(pancakes).join(', ') %></li>
             <% }); %>
         </ul>
     <% }) %>
