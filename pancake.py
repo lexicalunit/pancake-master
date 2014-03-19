@@ -11,8 +11,10 @@ import re
 import requests # third party
 import smtplib
 import string
+import tinycss # third party
 
 from bs4 import BeautifulSoup # third party
+from cssinline import styled
 from datetime import datetime, time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -43,117 +45,13 @@ PANCAKE_TIMEZONE = timezone('US/Central') # Austin is US/Central
 
 PICKLE_FILE = 'pancake.pickle'
 RECIPIENTS_FILE = 'pancake.list'
+STYLE_FILE = 'pancake.css'
 TEMPLATE_FILE = 'pancake.html'
 
 ALAMO_DATETIME_FORMAT = '%A, %B %d, %Y - %I:%M%p'
 DATE_FORMAT = '%A, %B %d, %Y'
 TIME_FORMAT = '%I:%M%p'
 TODAY = datetime.now()
-
-PANCAKE_STYLE = {
-    'html': {
-        'margin': '0',
-        'padding': '0',
-        'border': '0',
-    },
-    'body': {
-        'background-color': '#F2F2F2',
-        'font-family': 'sans-serif',
-    },
-    'a': {
-        'margin': '0',
-        'padding': '0',
-        'border': '0',
-        'color': 'inherit',
-        'text-decoration': 'none',
-    },
-    'ul': {
-        'background-color': '#A31E21',
-        'margin': '0',
-        'padding': '2%',
-        'border-top': '0',
-        'border-right': '8px solid #E2C162',
-        'border-bottom': '8px solid #E2C162',
-        'border-left': '8px solid #E2C162',
-        'border-bottom-left-radius': '15px',
-        'border-bottom-right-radius': '15px',
-        'list-style-type': 'none',
-        'list-style': 'none',
-    },
-    'h1': {
-        'color': '#E9E5C8',
-        'background-color': '#A31E21',
-        'margin': '5% 0 0 0',
-        'padding': '2% 2% 0% 2%',
-        'border-top': '8px solid #E2C162',
-        'border-right': '8px solid #E2C162',
-        'border-bottom': '0',
-        'border-left': '8px solid #E2C162',
-        'border-top-left-radius': '15px',
-        'border-top-right-radius': '15px',
-        'text-shadow': '3px 3px 3px #4d4d4d',
-    },
-    'h2': {
-        'color': '#E9E5C8',
-        'background-color': '#A31E21',
-        'margin': '0',
-        'padding': '0 0 1% 3%',
-        'border-top': '0',
-        'border-right': '8px solid #E2C162',
-        'border-bottom': '0',
-        'border-left': '8px solid #E2C162',
-    },
-    'li': {
-        'margin': '0 3% 0 3%',
-        'padding': '0 3% 0 3%',
-        'border': '0',
-        'font-size': '125%',
-        'line-height': '150%',
-    },
-    '.onsale': {
-        'color': 'blue',
-    },
-    '.soldout': {
-        'text-decoration': 'line-through',
-    },
-    '#footer': {
-        'width': '80%',
-        'margin-top': '0',
-        'margin-right': 'auto',
-        'margin-bottom': '0',
-        'margin-left': 'auto',
-        'padding': '0',
-        'border-top': '2em solid #F2F2F2',
-        'border-right': '0',
-        'border-bottom': '2em solid #F2F2F2',
-        'border-left': '0',
-        'text-align': 'center',
-        'line-height': '150%',
-    },
-    '#main': {
-        'width': '80%',
-        'padding': '0',
-        'margin-top': '0',
-        'margin-right': 'auto',
-        'margin-bottom': '0',
-        'margin-left': 'auto',
-        'border': '0',
-    },
-    '.pancake_item:nth-child(odd)': {
-        'background-color': '#FFFFFF',
-    },
-    '.pancake_item:nth-child(even)': {
-        'background-color': '#F5F5F5',
-    },
-    '.pancake_item:first-child': {
-        'border-top-left-radius': '15px',
-        'border-top-right-radius': '15px',
-    },
-    '.pancake_item:last-child': {
-        'border-bottom-left-radius': '15px',
-        'border-bottom-right-radius': '15px',
-    },
-}
 
 
 class API(object):
@@ -201,32 +99,6 @@ def html_showtimes(pancakes):
     return showtimes
 
 
-def apply_style(tag, style):
-    """Applies the given CSS style to the given tag."""
-    if 'style' not in tag.attrs:
-        tag['style'] = ''
-    s = ''.join('{}: {};'.format(k, v) for k, v in style.items())
-    tag['style'] += s
-
-
-def styled(html, style):
-    """Returns inline CSS styled HTML."""
-    soup = BeautifulSoup(html)
-    for tag in soup.find_all(True):
-        if tag.name in style:
-            apply_style(tag, style[tag.name])
-        if 'class' in tag.attrs:
-            for tag_class in tag['class']:
-                key = '.' + tag_class
-                if key in style:
-                    apply_style(tag, style[key])
-        if 'id' in tag.attrs:
-            key = '#' + tag['id']
-            if key in style:
-                apply_style(tag, style[key])
-    return str(soup.prettify())
-
-
 def html_digest(pancakes):
     """Returns pancake styled HTML digest of the given pancakes."""
     pancakes = sorted(pancakes, key=pancake_sort_key)
@@ -240,10 +112,12 @@ def html_digest(pancakes):
         film_uid, film, cinema_url, cinema = key
 
         film_heading = BeautifulSoup('<h1><a></a></h1>')
+        film_heading.h1['class'] = 'film_heading'
         film_heading.a['href'] = 'https://drafthouse.com/uid/' + film_uid
         film_heading.a.append(film)
 
         cinema_heading = BeautifulSoup('<h2><a></a></h2>')
+        cinema_heading.h2['class'] = 'cinema_heading'
         cinema_heading.a['href'] = cinema_url
         cinema_heading.a.append(cinema)
 
@@ -252,23 +126,12 @@ def html_digest(pancakes):
             item_data.append((date_string(day), ', '.join(html_showtimes(pancakes))))
 
         item_list = BeautifulSoup('<ul></ul>')
+        item_list.ul['class'] = 'pancake_items'
         for data, n in zip(item_data, count(1)):
             day, showtimes = data
 
             item = item_list.new_tag('li')
             item['class'] = 'pancake_item'
-
-            # TODO: automatically apply pseudo-class styles inside styled() function
-            if n % 2 == 0:
-                apply_style(item, PANCAKE_STYLE['.pancake_item:nth-child(odd)'])
-            else:
-                apply_style(item, PANCAKE_STYLE['.pancake_item:nth-child(even)'])
-
-            if n == 1:
-                apply_style(item, PANCAKE_STYLE['.pancake_item:first-child'])
-
-            if n == len(item_data):
-                apply_style(item, PANCAKE_STYLE['.pancake_item:last-child'])
 
             item_content = '<span>{day} - {showtimes}</span>'.format(day=day, showtimes=showtimes)
             item.append(BeautifulSoup(item_content))
@@ -278,12 +141,24 @@ def html_digest(pancakes):
         soup.append(cinema_heading)
         soup.append(item_list)
 
+    content = str(soup)
+
+    # load CSS stylesheet
+    try:
+        parser = tinycss.make_parser('page3')
+        stylesheet = parser.parse_stylesheet_file(STYLE_FILE)
+        style = {r.selector.as_css(): {d.name: d.value.as_css() for d in r.declarations} for r in stylesheet.rules}
+    except Exception as e:
+        log.warn('could not load CSS style file: {}'.format(e))
+        style = None
+
+    # load HTML template
     try:
         template = open(TEMPLATE_FILE, 'r').read()
-        return styled(template.format(content=str(soup)), PANCAKE_STYLE)
-    except:
-        log.warn('could not load HTML template file, generating incomplete HTML...')
-        return content
+        return styled(template.format(content=content), style)
+    except Exception as e:
+        log.warn('could not load HTML template file: {}'.format(e))
+        return styled(content, style)
 
 
 def text_digest(pancakes):
