@@ -1,18 +1,20 @@
-import httplib2
-import sys
+# License: none (public domain)
+
 import datetime
 import dateutil.parser
+import httplib2
 
-from pancake import query_pancakes
 from apiclient import discovery
-from oauth2client import file
 from oauth2client import client
+from oauth2client import file
 
 
-class GoogleCalender():
+class GoogleCalendar(object):
+    """Simple object for interacting with Google Calendar API."""
 
-    def __init__(self):
-        storage = file.Storage('credentials.dat')
+    def __init__(self, credentials_filename):
+        """Creates Google Calendar API interface using the given credentials."""
+        storage = file.Storage(credentials_filename)
         credentials = storage.get()
         if credentials is None or credentials.invalid:
             raise Exception('Credentials invalid or missing :(')
@@ -20,7 +22,9 @@ class GoogleCalender():
         http = credentials.authorize(http)
         self.service = discovery.build('calendar', 'v3', http=http)
 
-    def MakeEvent(self, calid, summary, startdt, enddt, timezone='America/Chicago'):
+
+    def insert_event(self, calid, summary, startdt, enddt, timezone):
+        """Inserts a new calendar event."""
         newevent = {
             'summary': summary,
             'start': {
@@ -34,7 +38,9 @@ class GoogleCalender():
         }
         self.service.events().insert(calendarId=calid, body=newevent).execute()
 
-    def GetEvents(self, calid):
+
+    def events(self, calid):
+        """Gets the list of calendar events."""
         page_token = None
         events = []
         while True:
@@ -45,13 +51,15 @@ class GoogleCalender():
                 break
         return events
 
-    def GetCalenders(self):
+
+    def calendar_list(self):
+        """Gets lits of google calendars."""
         page_token = None
-        calenders = []
+        calendars = []
         while True:
-            calender_list = self.service.calendarList().list(pageToken=None).execute()
-            calenders.extend(calender_list['items'])
-            page_token = calender_list.get('nextPageToken')
+            calendar_list = self.service.calendarList().list(pageToken=None).execute()
+            calendars.extend(calendar_list['items'])
+            page_token = calendar_list.get('nextPageToken')
             if not page_token:
                 break
-        return calenders
+        return calendars

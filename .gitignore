@@ -1,7 +1,8 @@
 # Pancake specific stuff
 pancake.list
 pancake.log
-pancake.pickle
+resources/pancake.pickle
+resources/credentials.dat
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
