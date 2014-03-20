@@ -8,19 +8,21 @@ import json
 import logging
 import pickle
 import re
-import requests # third party
+import requests  # third party
 import smtplib
 import string
-import tinycss # third party
+import tinycss  # third party
+import dateutil
 
-from bs4 import BeautifulSoup # third party
+from bs4 import BeautifulSoup  # third party
 from cssinline import styled
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from itertools import groupby, count
-from pytz import timezone # third party
+from pytz import timezone  # third party
 
+import gcal
 
 # setup logging to pancake.log and console
 log = logging.getLogger('pancake')
@@ -40,8 +42,8 @@ log.addHandler(ch)
 log.addHandler(fh)
 
 
-PANCAKE_MARKET = 0 # 0 is Austin's market id
-PANCAKE_TIMEZONE = timezone('US/Central') # Austin is US/Central
+PANCAKE_MARKET = 0  # 0 is Austin's market id
+PANCAKE_TIMEZONE = timezone('US/Central')  # Austin is US/Central
 
 PICKLE_FILE = 'pancake.pickle'
 RECIPIENTS_FILE = 'pancake.list'
@@ -55,6 +57,7 @@ TODAY = datetime.now()
 
 
 class API(object):
+
     """Alamo Drafthouse API resources."""
     cinema_sessions_url = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx'
     market_sessions_url = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx'
@@ -92,7 +95,7 @@ def html_showtimes(pancakes):
             anchor = soup.new_tag('a', href=pancake['url'])
             anchor.append(time_string(pancake['datetime']))
             soup.span.append(anchor)
-        else: # pancake['status'] == 'soldout' or pancake['status'] == 'notonsale'
+        else:  # pancake['status'] == 'soldout' or pancake['status'] == 'notonsale'
             soup.span.append(time_string(pancake['datetime']))
 
         showtimes.append(str(soup))
@@ -169,7 +172,7 @@ def text_digest(pancakes):
             status = 'On sale now!'
         elif pancake['status'] == 'soldout':
             status = 'Sold out.'
-        else: # pancake['status'] == 'notonsale'
+        else:  # pancake['status'] == 'notonsale'
             status = 'Not on sale yet.'
         params = (
             pancake['film'].encode('utf-8'),
@@ -249,7 +252,7 @@ def query(url, **kwargs):
 
         if is_jsonp:
             jsonp = resp.text
-            data = json.loads(jsonp[jsonp.index("(") + 1 : jsonp.rindex(")")])
+            data = json.loads(jsonp[jsonp.index("(") + 1: jsonp.rindex(")")])
         else:
             data = resp.json()
     except Exception as e:
@@ -258,7 +261,7 @@ def query(url, **kwargs):
 
     if 'msg' in data:
         raise Exception('Alamo Drafthouse API error: {}'.format(data['msg']))
-        
+
     return data
 
 
@@ -276,9 +279,7 @@ def query_pancakes(market_id):
     """Queries the Alamo Drafthouse API for the list of pancakes in a given market."""
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
-        data = query(API.cinema_sessions_url
-            , cinemaid=format_uid(cinema_id)
-            , callback='whatever') # sadly, this resource *requires* JSONP callback parameter
+        data = query(API.cinema_sessions_url, cinemaid=format_uid(cinema_id), callback='whatever')  # sadly, this resource *requires* JSONP callback parameter
 
         for date_data in data['Cinema']['Dates']:
             for film_data in date_data['Films']:
@@ -286,7 +287,7 @@ def query_pancakes(market_id):
                 film_uid = str(film_data['FilmId'])
 
                 if not all(s in film.lower() for s in ['pancake', 'master']):
-                    continue # DO NOT WANT!
+                    continue  # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
                     status = str(session_data['SessionStatus'])
@@ -349,11 +350,11 @@ def update_pancakes(db, pancakes):
         key = pancake_key(pancake)
 
         if key in db:
-            if db[key]['status'] == 'notonsale'  and pancake['status'] == 'onsale':
+            if db[key]['status'] == 'notonsale' and pancake['status'] == 'onsale':
                 updated.append(pancake)
         else:
             updated.append(pancake)
-    
+
         db[key] = pancake
     return updated
 
@@ -363,6 +364,31 @@ def prune_database(db):
     for key, pancake in db.items():
         if pancake['datetime'].date() < TODAY.date():
             del db[key]
+
+
+def do_calender(pancakes):
+    gcals = gcal.GoogleCalender()
+    calenders = gcals.GetCalenders()
+    pancake_calender_id = None
+    for calendar_list_entry in calenders:
+        if calendar_list_entry['summary'] == 'Master Pancakes':
+            pancake_calender_id = calendar_list_entry['id']
+    if not pancake_calender_id:
+        raise Exception("Can't find 'Master Pancakes' calender")
+    events = gcals.GetEvents(pancake_calender_id)
+    for pancake in pancakes:
+        p_datetime = pancake['datetime']
+        gevent = None
+        for event in events:
+            gevent_datetime = dateutil.parser.parse(event['start']['dateTime'])
+            if event['summary'] == (pancake['film'] + pancake['cinema']) and gevent_datetime == p_datetime:
+                gevent = event
+                break
+        if gevent:
+            print pancake['film'] + ' already in calender'
+        else:
+            end_time = p_datetime + timedelta(hours=2)
+            gcals.MakeEvent(pancake_calender_id, pancake['film'] + pancake['cinema'], p_datetime, end_time)
 
 
 if __name__ == '__main__':
@@ -381,6 +407,7 @@ if __name__ == '__main__':
     try:
         pancakes = query_pancakes(PANCAKE_MARKET)
         updated = update_pancakes(db, pancakes)
+        #do_calender(updated)
         notify(updated, recipients)
         prune_database(db)
         save_database(db)
