@@ -16,16 +16,16 @@ PANCAKE_MARKET = 0 # 0 is Austin's market id
 RECIPIENTS_FILE = 'pancake.list'
 
 
-def setup_logging(filename):
+def setup_logging(filename, level):
     """Setups up root logger to log to filename and console simultaneously."""
     log = logging.getLogger()
-    log.setLevel(logging.INFO)
+    log.setLevel(level)
 
     fh = logging.FileHandler(filename)
-    fh.setLevel(logging.INFO)
+    fh.setLevel(level)
 
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    ch.setLevel(level)
 
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
@@ -36,7 +36,7 @@ def setup_logging(filename):
 
 
 if __name__ == '__main__':
-    setup_logging(LOG_FILE)
+    setup_logging(LOG_FILE, logging.INFO)
     log = logging.getLogger()
 
     try:
