@@ -3,6 +3,8 @@ pancake.py
 
 Python script that searches for Master Pancake showtimes in Austin. Run it periodically to send out email notifications whenever a new pancake is detected, or when a previously detected pancake goes on sale. Never miss out on getting tickets again!
 
+Dependencies: beautifulsoup4, dateutil, google-api-python-client, httplib2, oauth2client, pytz, requests, tinycss, uritemplate
+
 index.html
 ====
 
