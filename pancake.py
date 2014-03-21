@@ -19,13 +19,13 @@ RECIPIENTS_FILE = 'pancake.list'
 def setup_logging(filename):
     """Setups up root logger to log to filename and console simultaneously."""
     log = logging.getLogger()
-    log.setLevel(logging.DEBUG)
+    log.setLevel(logging.INFO)
 
     fh = logging.FileHandler(filename)
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.INFO)
 
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    ch.setLevel(logging.INFO)
 
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)

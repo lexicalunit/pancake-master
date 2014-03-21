@@ -15,6 +15,11 @@ MARKET_SESSIONS_URL = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/mar
 log = logging.getLogger(__name__)
 
 
+def format_json(data):
+    """Return pretty formated json data."""
+    return json.dumps(data, indent=4)
+
+
 def format_uid(uid):
     """Returns uid formatted in the way that the Alamo Drafthouse API expects."""
     return '{:04.0f}'.format(uid)
@@ -67,6 +72,7 @@ def query(url, **kwargs):
 def query_cinemas(market_id):
     """Queries the Alamo Drafthouse API for the list of cinemas in a given market."""
     data = query(MARKET_SESSIONS_URL, date=datetime.strftime(datetime.now(), '%Y%m%d'), marketid=format_uid(market_id))
+    log.debug('market response:\n{}'.format(format_json(data)))
 
     cinemas = []
     for cinema in data['Market']['Cinemas']:
@@ -79,6 +85,7 @@ def query_pancakes(market_id, market_timezone):
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
         data = query(CINEMA_SESSIONS_URL, cinemaid=format_uid(cinema_id), callback='whatever')  # sadly, this resource *requires* JSONP callback parameter
+        log.debug('cinema response:\n{}'.format(format_json(data)))
 
         for date_data in data['Cinema']['Dates']:
             for film_data in date_data['Films']:
