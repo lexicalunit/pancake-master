@@ -6,6 +6,7 @@ import hashlib
 import logging
 import os
 import pickle
+import smtplib
 import tinycss
 
 from bs4 import BeautifulSoup
@@ -85,10 +86,15 @@ def html_digest(pancakes):
         film_heading.a['href'] = 'https://drafthouse.com/uid/' + film_uid
         film_heading.a.append(film)
 
-        cinema_heading = BeautifulSoup('<h2><a></a></h2>')
-        cinema_heading.h2['class'] = 'cinema_heading'
-        cinema_heading.a['href'] = cinema_url
-        cinema_heading.a.append(cinema)
+        if cinema_url:
+            cinema_heading = BeautifulSoup('<h2><a></a></h2>')
+            cinema_heading.h2['class'] = 'cinema_heading'
+            cinema_heading.a['href'] = cinema_url
+            cinema_heading.a.append(cinema)
+        else:
+            cinema_heading = BeautifulSoup('<h2></h2>')
+            cinema_heading.h2['class'] = 'cinema_heading'
+            cinema_heading.h2.append(cinema)
 
         item_data = []
         for day, pancakes in groupby(pancakes, key=by_day):

@@ -76,7 +76,13 @@ def query_cinemas(market_id):
 
     cinemas = []
     for cinema in data['Market']['Cinemas']:
-        cinemas.append((int(cinema['CinemaId']), str(cinema['CinemaName']), str(cinema['CinemaURL'])))
+        log.debug(cinema['CinemaName'])
+        url = cinema.get('CinemaURL', None) # Rolling Roadshow has no URL
+        cinemas.append((
+            int(cinema['CinemaId']),
+            str(cinema['CinemaName']),
+            str(url) if url else None
+        ))
     return cinemas
 
 
@@ -101,8 +107,8 @@ def query_pancakes(market_id, market_timezone):
                         'film': string.capwords(film.replace('Master Pancake: ', '').lower()),
                         'film_uid': film_uid,
                         'url': str(session_data['SessionSalesURL']) if status == 'onsale' else None,
-                        'cinema': str(cinema),
-                        'cinema_url': str(cinema_url),
+                        'cinema': cinema,
+                        'cinema_url': cinema_url,
                         'datetime': parse_datetime(date_data['Date'], session_data['SessionTime'], market_timezone),
                         'status': status,
                     }
