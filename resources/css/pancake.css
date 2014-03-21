@@ -118,3 +118,11 @@ a {
     text-align: center;
     line-height: 150%;
 }
+
+#footer a {
+    color: blue;
+}
+
+a:hover {
+    color: #8DE1FF !important;
+}
