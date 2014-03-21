@@ -246,6 +246,9 @@ def prune_database(db):
 
 def update_calendar(pancakes, market_timezone):
     """Updates our Google Calendar with Master Pancake events."""
+    if not pancakes:
+        return
+
     cal = GoogleCalendar(GOOGLE_CALENDAR_CREDENTIALS_FILE)
     calendars = cal.calendar_list()
     pancake_calendar_id = None
