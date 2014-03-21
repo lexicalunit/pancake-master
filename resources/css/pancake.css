@@ -123,6 +123,10 @@ a {
     color: blue;
 }
 
-a:hover {
+#footer a:hover {
+    color: #8DE1FF !important;
+}
+
+li a:hover {
     color: #8DE1FF !important;
 }
