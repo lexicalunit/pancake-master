@@ -18,7 +18,7 @@ class GoogleCalendar(object):
         credentials = storage.get()
         if credentials is None or credentials.invalid:
             raise Exception('Credentials invalid or missing :(')
-        http = httplib2.Http()
+        http = httplib2.Http(disable_ssl_certificate_validation=True)
         http = credentials.authorize(http)
         self.service = discovery.build('calendar', 'v3', http=http)
 
