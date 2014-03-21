@@ -51,6 +51,7 @@ def styled(html, style):
             selectors[selector].append(pseudoclass)
 
     def selector_applies(selector, tag):
+        """Helper: Returns true iff the given selector specification applies to the given tag."""
         # TODO: Support more complicated CSS selectors.
         if ' ' in selector:
             parent, inner_selector = selector.split(' ')
