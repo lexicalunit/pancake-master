@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup # third party
+from bs4 import BeautifulSoup
 
 
 def apply_style(tag, tag_style):
@@ -50,19 +50,36 @@ def styled(html, style):
         if pseudoclass:
             selectors[selector].append(pseudoclass)
 
+    def selector_applies(selector, tag):
+        # TODO: Support more complicated CSS selectors.
+        if ' ' in selector:
+            parent, inner_selector = selector.split(' ')
+        else:
+            parent, inner_selector = None, selector
+
+        if parent:
+            if not selector_applies(parent, tag.parent):
+                return False
+
+        if tag.name == inner_selector:
+            return True
+
+        for tag_class in tag.get('class', []):
+            if inner_selector == '.' + tag_class:
+                return True
+
+        if 'id' in tag.attrs and inner_selector == '#' + tag['id']:
+                return True
+
+        return False
+
+
     def get_tag_style(tag, style, selectors):
         """Helper: Gets the tag's style give the complete CSS style and selectors lookup."""
         keys = []
-        if tag.name in selectors:
-            keys.append(tag.name)
-        for tag_class in tag.get('class', []):
-            key = '.' + tag_class
-            if key in selectors:
-                keys.append(key)
-        if 'id' in tag.attrs:
-            key = '#' + tag['id']
-            if key in selectors:
-                keys.append(key)
+        for selector in selectors:
+            if selector_applies(selector, tag):
+                keys.append(selector)
 
         tag_style = {}
         for key in keys:

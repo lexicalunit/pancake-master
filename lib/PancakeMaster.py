@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from itertools import groupby, count
-from cssinline import styled
+from InlineCSS import styled
 from GoogleCalendar import GoogleCalendar
 
 
