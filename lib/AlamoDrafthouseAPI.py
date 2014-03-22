@@ -31,7 +31,7 @@ def sanitize_film_title(title):
 
 
 def parse_datetime(date_str, time_str, market_timezone):
-    """Returns a datetime object representing the show time of the given Alamo Drafthouse API's date and time."""
+    """Returns the show time of the given Alamo Drafthouse API's date and time."""
     timestamp = '{} - {}'.format(str(date_str), str(time_str))
 
     if time_str == 'Midnight':
@@ -71,13 +71,16 @@ def query(url, **kwargs):
 
 def query_cinemas(market_id):
     """Queries the Alamo Drafthouse API for the list of cinemas in a given market."""
-    data = query(MARKET_SESSIONS_URL, date=datetime.strftime(datetime.now(), '%Y%m%d'), marketid=format_uid(market_id))
+    data = query(
+        MARKET_SESSIONS_URL,
+        date=datetime.strftime(datetime.now(), '%Y%m%d'),
+        marketid=format_uid(market_id))
     log.debug('market response:\n{}'.format(format_json(data)))
 
     cinemas = []
     for cinema in data['Market']['Cinemas']:
         log.debug(cinema['CinemaName'])
-        url = cinema.get('CinemaURL', None) # Rolling Roadshow has no URL
+        url = cinema.get('CinemaURL', None)  # Rolling Roadshow has no URL
         cinemas.append((
             int(cinema['CinemaId']),
             str(cinema['CinemaName']),
@@ -90,7 +93,10 @@ def query_pancakes(market_id, market_timezone):
     """Queries the Alamo Drafthouse API for the list of pancakes in a given market."""
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
-        data = query(CINEMA_SESSIONS_URL, cinemaid=format_uid(cinema_id), callback='whatever')  # sadly, this resource *requires* JSONP callback parameter
+        data = query(
+            CINEMA_SESSIONS_URL,
+            cinemaid=format_uid(cinema_id),
+            callback='whatever')  # sadly, this resource *requires* JSONP callback parameter
         log.debug('cinema response:\n{}'.format(format_json(data)))
 
         for date_data in data['Cinema']['Dates']:
@@ -103,13 +109,17 @@ def query_pancakes(market_id, market_timezone):
 
                 for session_data in film_data['Sessions']:
                     status = str(session_data['SessionStatus'])
+                    showtime = parse_datetime(
+                        date_data['Date'],
+                        session_data['SessionTime'],
+                        market_timezone)
                     pancake = {
                         'film': string.capwords(film.replace('Master Pancake: ', '').lower()),
                         'film_uid': film_uid,
                         'url': str(session_data['SessionSalesURL']) if status == 'onsale' else None,
                         'cinema': cinema,
                         'cinema_url': cinema_url,
-                        'datetime': parse_datetime(date_data['Date'], session_data['SessionTime'], market_timezone),
+                        'datetime': showtime,
                         'status': status,
                     }
                     pancakes.append(pancake)

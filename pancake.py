@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 # License: none (public domain)
-# dependencies: beautifulsoup4, dateutil, google-api-python-client, httplib2, oauth2client, pytz, requests, tinycss, uritemplate
+# dependencies: beautifulsoup4, dateutil, google-api-python-client, httplib2,
+#               oauth2client, pytz, requests, tinycss, uritemplate
 
 import lib.PancakeMaster as pm
 import lib.AlamoDrafthouseAPI as api
@@ -11,8 +12,8 @@ from pytz import timezone
 
 
 LOG_FILE = 'pancake.log'
-MARKET_TIMEZONE = timezone('US/Central') # Austin is US/Central
-PANCAKE_MARKET = 0 # 0 is Austin's market id
+MARKET_TIMEZONE = timezone('US/Central')  # Austin is US/Central
+PANCAKE_MARKET = 0  # 0 is Austin's market id
 RECIPIENTS_FILE = 'pancake.list'
 
 
