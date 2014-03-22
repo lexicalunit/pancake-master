@@ -23,20 +23,9 @@ class GoogleCalendar(object):
         self.service = discovery.build('calendar', 'v3', http=http)
 
 
-    def insert_event(self, calid, summary, startdt, enddt, timezone):
+    def insert_event(self, calid, event_body):
         """Inserts a new calendar event."""
-        newevent = {
-            'summary': summary,
-            'start': {
-                'dateTime': startdt.isoformat(),
-                'timeZone': timezone
-            },
-            'end': {
-                'dateTime': enddt.isoformat(),
-                'timeZone': timezone
-            }
-        }
-        self.service.events().insert(calendarId=calid, body=newevent).execute()
+        self.service.events().insert(calendarId=calid, body=event_body).execute()
 
 
     def events(self, calid):
