@@ -255,25 +255,46 @@ def update_calendar(pancakes, market_timezone):
     if not pancakes:
         return
 
-    cal = GoogleCalendar(GOOGLE_CALENDAR_CREDENTIALS_FILE)
-    calendars = cal.calendar_list()
-    pancake_calendar_id = None
-    for calendar_list_entry in calendars:
-        if calendar_list_entry['summary'] == 'Master Pancakes':
-            pancake_calendar_id = calendar_list_entry['id']
-    if not pancake_calendar_id:
+    gcal = GoogleCalendar(GOOGLE_CALENDAR_CREDENTIALS_FILE)
+    calendar = next((c for c in gcal.calendar_list() if c['summary'] == 'Master Pancakes'), None)
+
+    if not calendar:
         raise Exception("Can't find 'Master Pancakes' calendar")
-    events = cal.events(pancake_calendar_id)
+
+    events = gcal.events(calendar['id'])
+
     for pancake in pancakes:
-        p_datetime = pancake['datetime']
-        gevent = None
+        start_time = pancake['datetime']
+        end_time = start_time + timedelta(hours=2) # Master Pancakes typically run 2 hours
+
         for event in events:
-            gevent_datetime = dateutil.parser.parse(event['start']['dateTime'])
-            if event['summary'] == (pancake['film'] + pancake['cinema']) and gevent_datetime == p_datetime:
-                gevent = event
-                break
-        if gevent:
-            log.info('{} already in calendar'.format(pancake['film']))
-        else:
-            end_time = p_datetime + timedelta(hours=2)
-            cal.insert_event(pancake_calendar_id, pancake['film'] + pancake['cinema'], p_datetime, end_time, market_timezone.zone)
+            event_datetime = dateutil.parser.parse(event['start']['dateTime'])
+            if (event['summary'] == pancake['film']
+                and event['location'] == pancake['cinema']
+                and event_datetime == start_time):
+                log.info('{} already in calendar'.format(pancake['film']))
+                continue
+
+        if pancake['status'] == 'notonsale':
+            status = 'Not yet on sale.'
+        elif pancake['status'] == 'onsale':
+            status = 'On sale now!'
+        else: # pancake['status'] == 'soldout':
+            status = 'Sold out.'
+
+        newevent = {
+            'summary': pancake['film'],
+            'location': pancake['cinema'],
+            'description': status,
+            'start': {
+                'dateTime': start_time.isoformat(),
+                'timeZone': market_timezone.zone
+            },
+            'end': {
+                'dateTime': end_time.isoformat(),
+                'timeZone': market_timezone.zone
+            }
+        }
+        if pancake['url']:
+            newevent['description'] += '\n' + pancake['url']
+        gcal.insert_event(calendar['id'], newevent)
