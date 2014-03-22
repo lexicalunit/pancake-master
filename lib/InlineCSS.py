@@ -23,6 +23,7 @@ def _pseudoclass_applies(tag, pseudoclass):
         return True
     return False
 
+
 def _split_key(key):
     """Helper: Splits CSS key into selector and list of available pseudo-classes."""
     pair = key.split(':')

@@ -1,11 +1,8 @@
 # License: none (public domain)
 
-import datetime
-import dateutil.parser
 import httplib2
 
 from apiclient import discovery
-from oauth2client import client
 from oauth2client import file
 
 
@@ -22,11 +19,9 @@ class GoogleCalendar(object):
         http = credentials.authorize(http)
         self.service = discovery.build('calendar', 'v3', http=http)
 
-
     def insert_event(self, calid, event_body):
         """Inserts a new calendar event."""
         self.service.events().insert(calendarId=calid, body=event_body).execute()
-
 
     def events(self, calid):
         """Gets the list of calendar events."""
@@ -39,7 +34,6 @@ class GoogleCalendar(object):
             if not page_token:
                 break
         return events
-
 
     def calendar_list(self):
         """Gets lits of google calendars."""

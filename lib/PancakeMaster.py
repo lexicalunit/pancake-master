@@ -122,7 +122,11 @@ def html_digest(pancakes):
     try:
         parser = tinycss.make_parser('page3')
         stylesheet = parser.parse_stylesheet_file(STYLE_FILE)
-        style = {r.selector.as_css(): {d.name: d.value.as_css() for d in r.declarations} for r in stylesheet.rules}
+        style = {
+            r.selector.as_css(): {
+                d.name: d.value.as_css() for d in r.declarations
+            } for r in stylesheet.rules
+        }
     except Exception as e:
         log.warn('could not load CSS style file: {}'.format(e))
         style = None
@@ -228,7 +232,7 @@ def load_database():
 
 
 def update_pancakes(db, pancakes):
-    """Updates the given database of pancakes given the list of all pancakes, returns list of updated pancakes."""
+    """Updates database given the list of all pancakes, returns list of updated pancakes."""
     updated = []
     for pancake in pancakes:
         key = pancake_key(pancake)
@@ -265,13 +269,15 @@ def update_calendar(pancakes, market_timezone):
 
     for pancake in pancakes:
         start_time = pancake['datetime']
-        end_time = start_time + timedelta(hours=2) # Master Pancakes typically run 2 hours
+        end_time = start_time + timedelta(hours=2)  # Master Pancakes typically run 2 hours
 
         for event in events:
             event_datetime = dateutil.parser.parse(event['start']['dateTime'])
-            if (event['summary'] == pancake['film']
+            if (
+                event['summary'] == pancake['film']
                 and event['location'] == pancake['cinema']
-                and event_datetime == start_time):
+                and event_datetime == start_time
+            ):
                 log.info('{} already in calendar'.format(pancake['film']))
                 continue
 
@@ -279,7 +285,7 @@ def update_calendar(pancakes, market_timezone):
             status = 'Not yet on sale.'
         elif pancake['status'] == 'onsale':
             status = 'On sale now!'
-        else: # pancake['status'] == 'soldout':
+        else:  # pancake['status'] == 'soldout':
             status = 'Sold out.'
 
         newevent = {
