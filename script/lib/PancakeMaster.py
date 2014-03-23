@@ -1,6 +1,7 @@
 # License: none (public domain)
 
-import dateutil
+import AlamoDrafthouseAPI as api
+import dateutil.parser
 import gzip
 import hashlib
 import logging
@@ -19,10 +20,11 @@ from GoogleCalendar import GoogleCalendar
 
 
 RESOURCES_DIRECTORY = 'resources'
-PICKLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'pancake.pickle')
+CREDENTIALS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'credentials.dat')
+PICKLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'cache', 'pancake.pickle')
+RECIPIENTS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'pancake.list')
 STYLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'css', 'pancake.css')
 TEMPLATE_FILE = os.path.join(RESOURCES_DIRECTORY, 'template', 'pancake.html')
-GOOGLE_CALENDAR_CREDENTIALS_FILE = os.path.join(RESOURCES_DIRECTORY, 'credentials.dat')
 
 DATE_FORMAT = '%A, %B %d, %Y'
 TIME_FORMAT = '%I:%M%p'
@@ -228,7 +230,8 @@ def load_database():
             return pickle.loads(buf)
     except Exception as e:
         log.error('load failure: {}'.format(e))
-        raise
+        log.warn('creating new pancake database...')
+    return {}
 
 
 def update_pancakes(db, pancakes):
@@ -259,7 +262,7 @@ def update_calendar(pancakes, market_timezone):
     if not pancakes:
         return
 
-    gcal = GoogleCalendar(GOOGLE_CALENDAR_CREDENTIALS_FILE)
+    gcal = GoogleCalendar(CREDENTIALS_FILE)
     calendar = next((c for c in gcal.calendar_list() if c['summary'] == 'Master Pancakes'), None)
 
     if not calendar:
@@ -304,3 +307,49 @@ def update_calendar(pancakes, market_timezone):
         if pancake['url']:
             newevent['description'] += '\n' + pancake['url']
         gcal.insert_event(calendar['id'], newevent)
+
+
+def load_rerecipients():
+    """Returns list of email addresses to notify."""
+    try:
+        return [line.strip() for line in open(RECIPIENTS_FILE)]
+    except:
+        log.warn('no email recipients found, not sending email notifications...')
+    return []
+
+
+def main(market, market_timezone, disable_notify=False, disable_calendar=False):
+    """Fetches pancake data, send notifications, and reports updates."""
+    db = load_database()
+    recipients = load_rerecipients()
+
+    try:
+        pancakes = api.query_pancakes(market, market_timezone)
+    except:
+        pancakes = []
+        log.exception('api error:')
+
+    updated = update_pancakes(db, pancakes)
+
+    if not disable_calendar:
+        try:
+            update_calendar(updated, market_timezone)
+        except:
+            log.exception('calendar error:')
+
+    if not disable_notify:
+        try:
+            notify(updated, recipients)
+        except:
+            log.exception('notification error:')
+
+    prune_database(db)
+    save_database(db)
+
+
+def clear_cache():
+    """Deletes existing pancake database."""
+    try:
+        os.remove(PICKLE_FILE)
+    except:
+        log.exception('clearing cache:')
