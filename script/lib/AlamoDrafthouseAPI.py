@@ -78,14 +78,15 @@ def query_cinemas(market_id):
     log.debug('market response:\n{}'.format(format_json(data)))
 
     cinemas = []
-    for cinema in data['Market']['Cinemas']:
-        log.debug(cinema['CinemaName'])
-        url = cinema.get('CinemaURL', None)  # Rolling Roadshow has no URL
-        cinemas.append((
-            int(cinema['CinemaId']),
-            str(cinema['CinemaName']),
-            str(url) if url else None
-        ))
+    if 'Market' in data:
+        for cinema in data['Market']['Cinemas']:
+            log.debug(cinema['CinemaName'])
+            url = cinema.get('CinemaURL', None)  # Rolling Roadshow has no URL
+            cinemas.append((
+                int(cinema['CinemaId']),
+                str(cinema['CinemaName']),
+                str(url) if url else None
+            ))
     return cinemas
 
 
