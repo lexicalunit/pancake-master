@@ -219,6 +219,7 @@ def load_database():
     """Unpickles and decompresses the given file and returns the created object."""
     filename = PICKLE_FILE
     log.info('loading {}'.format(filename))
+
     try:
         with gzip.GzipFile(filename, 'rb') as f:
             buf = ''
@@ -318,8 +319,19 @@ def load_rerecipients():
     return []
 
 
+def mkdir_p(dir):
+    """Make directory without error if it already exists."""
+    try:
+        os.mkdir(dir)
+    except:
+        pass
+
+
 def main(market, market_timezone, disable_notify=False, disable_calendar=False):
     """Fetches pancake data, send notifications, and reports updates."""
+    mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'config'))
+    mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'cache'))
+
     db = load_database()
     recipients = load_rerecipients()
 
