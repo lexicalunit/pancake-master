@@ -35,6 +35,10 @@ class GoogleCalendar(object):
                 break
         return events
 
+    def update_event(self,calid,eventid,body):
+        self.service.events().update(calendarId=calid,eventId=eventid,body=body).execute()
+
+        
     def calendar_list(self):
         """Gets lits of google calendars."""
         page_token = None
