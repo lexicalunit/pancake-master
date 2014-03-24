@@ -35,4 +35,4 @@ def deploy():
     deploy_project('web', conf['web_remote_dir'],
                    ['.git', 'fabfile.py', 'cache', 'config', 'template'])
     deploy_project('script', conf['script_remote_dir'],
-                   ['.git', 'fabfile.py', 'cache', 'js', 'image'])
+                   ['.git', 'fabfile.py', 'cache', 'config', 'js', 'image'])
