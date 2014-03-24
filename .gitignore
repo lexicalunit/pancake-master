@@ -4,6 +4,7 @@ resources/config/credentials.dat
 resources/cache/pancake.pickle
 script/pancake.log
 deploy.yaml
+gh-pages
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
