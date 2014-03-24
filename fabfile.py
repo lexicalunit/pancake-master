@@ -25,7 +25,7 @@ def deploy_project(local_dir, remote_dir, exclusions=[]):
     """Deploy the entire project at local_dir to remote_dir, excluding the given paths."""
     with lcd(repo_root):
         with lcd(local_dir):
-            rsync_project(remote_dir=remote_dir, local_dir='.', exclude=exclusions)
+            rsync_project(remote_dir=remote_dir, local_dir='.', exclude=exclusions, delete=True)
         rsync_project(remote_dir=remote_dir, local_dir='resources', exclude=exclusions, delete=True)
 
 
