@@ -10,11 +10,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 log = logging.getLogger()
 repo_root = local('git rev-parse --show-toplevel', capture=True)
+conf_file = 'deploy.yaml'
 
 try:
-    conf = yaml.load(open(os.path.join(repo_root, 'deploy.yaml'), 'rb').read())
+    conf = yaml.load(open(os.path.join(repo_root, conf_file), 'rb').read())
 except:
-    log.exception('error: unable to read deply.yaml config file:')
+    log.exception('error: unable to read {} config file:'.format(conf_file))
 
 env.user = conf['user']
 env.hosts = ['{}@{}:22'.format(env.user, host) for host in conf['hosts']]
