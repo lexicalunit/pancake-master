@@ -1,0 +1,132 @@
+/* pancake-master style
+   License: none (public domain)
+*/
+
+html {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+body {
+    background-color: #F2F2F2;
+    font-family: sans-serif;
+}
+
+a {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    text-decoration: none;
+}
+
+#main {
+    width: 80%;
+    padding: 0;
+    margin-top: 0;
+    margin-right: auto;
+    margin-bottom: 0;
+    margin-left: auto;
+    border: 0;
+}
+
+.film_heading {
+    color: #E9E5C8;
+    background-color: #A31E21;
+    margin: 5% 0 0 0;
+    padding: 2% 2% 0% 2%;
+    border-top: 8px solid #E2C162;
+    border-right: 8px solid #E2C162;
+    border-bottom: 0;
+    border-left: 8px solid #E2C162;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    text-shadow: 3px 3px 3px #4d4d4d;
+}
+
+.cinema_heading {
+    color: #E9E5C8;
+    background-color: #A31E21;
+    margin: 0;
+    padding: 0 0 1% 3%;
+    border-top: 0;
+    border-right: 8px solid #E2C162;
+    border-bottom: 0;
+    border-left: 8px solid #E2C162;
+}
+
+.pancake_item {
+    margin: 0 3% 0 3%;
+    padding: 0 3% 0 3%;
+    border: 0;
+    font-size: 125%;
+    line-height: 150%;
+}
+
+.pancake_items {
+    background-color: #A31E21;
+    margin: 0;
+    padding: 2%;
+    border-top: 0;
+    border-right: 8px solid #E2C162;
+    border-bottom: 8px solid #E2C162;
+    border-left: 8px solid #E2C162;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+    list-style-type: none;
+    list-style: none;
+}
+
+.pancake_item:nth-child(odd) {
+    background-color: #FFFFFF;
+}
+
+.pancake_item:nth-child(even) {
+    background-color: #F5F5F5;
+}
+
+.pancake_item:first-child {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.pancake_item:last-child {
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+
+.onsale {
+    color: blue;
+}
+
+.soldout {
+    text-decoration: line-through;
+}
+
+#footer {
+    width: 80%;
+    margin-top: 0;
+    margin-right: auto;
+    margin-bottom: 0;
+    margin-left: auto;
+    padding: 0;
+    border-top: 2em solid #F2F2F2;
+    border-right: 0;
+    border-bottom: 2em solid #F2F2F2;
+    border-left: 0;
+    text-align: center;
+    line-height: 150%;
+}
+
+#footer a {
+    color: blue;
+}
+
+#footer a:hover {
+    color: #8DE1FF !important;
+}
+
+li a:hover {
+    color: #8DE1FF !important;
+}
