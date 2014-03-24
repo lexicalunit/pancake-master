@@ -16,4 +16,4 @@ Static HTML+AJAX solution which fetches and displays the most up-to-date Master 
 Preview
 ====
 
-![alt tag](http://lexicalunit.github.io/pancake-master/resources/image/preview.png)
+![alt tag](https://lexicalunit.github.io/pancake-master/resources/image/preview.png)
