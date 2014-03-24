@@ -2,6 +2,7 @@
 
 import AlamoDrafthouseAPI as api
 import dateutil.parser
+import errno
 import gzip
 import hashlib
 import logging
@@ -275,6 +276,13 @@ def update_calendar(pancakes, market_timezone):
         start_time = pancake['datetime']
         end_time = start_time + timedelta(hours=2)  # Master Pancakes typically run 2 hours
 
+        if pancake['status'] == 'notonsale':
+            event_status = 'Not yet on sale.'
+        elif pancake['status'] == 'onsale':
+            event_status = 'On sale now!'
+        else:  # pancake['status'] == 'soldout':
+            event_status = 'Sold out.'
+
         for event in events:
             event_datetime = dateutil.parser.parse(event['start']['dateTime'])
             if (
@@ -282,32 +290,28 @@ def update_calendar(pancakes, market_timezone):
                 and event['location'] == pancake['cinema']
                 and event_datetime == start_time
             ):
-                log.info('{} already in calendar'.format(pancake['film']))
-                continue
-
-        if pancake['status'] == 'notonsale':
-            status = 'Not yet on sale.'
-        elif pancake['status'] == 'onsale':
-            status = 'On sale now!'
-        else:  # pancake['status'] == 'soldout':
-            status = 'Sold out.'
-
-        newevent = {
-            'summary': pancake['film'],
-            'location': pancake['cinema'],
-            'description': status,
-            'start': {
-                'dateTime': start_time.isoformat(),
-                'timeZone': market_timezone.zone
-            },
-            'end': {
-                'dateTime': end_time.isoformat(),
-                'timeZone': market_timezone.zone
+                if event['description'].starts_with(event_status):
+                    log.info('{} already in calendar'.format(pancake['film']))
+                    break
+                else:
+                    log.warn('TODO: {} should be updated'.format(pancake['film']))
+        else:
+            newevent = {
+                'summary': pancake['film'],
+                'location': pancake['cinema'],
+                'description': event_status,
+                'start': {
+                    'dateTime': start_time.isoformat(),
+                    'timeZone': market_timezone.zone
+                },
+                'end': {
+                    'dateTime': end_time.isoformat(),
+                    'timeZone': market_timezone.zone
+                }
             }
-        }
-        if pancake['url']:
-            newevent['description'] += '\n' + pancake['url']
-        gcal.insert_event(calendar['id'], newevent)
+            if pancake['url']:
+                newevent['description'] += '\n' + pancake['url']
+            gcal.insert_event(calendar['id'], newevent)
 
 
 def load_rerecipients():
@@ -319,12 +323,26 @@ def load_rerecipients():
     return []
 
 
-def mkdir_p(dir):
+def mkdir_p(path):
     """Make directory without error if it already exists."""
     try:
-        os.mkdir(dir)
+        os.makedirs(path, exist_ok=True)  # python 3.2+
+    except TypeError as e:
+        try:
+            os.makedirs(path)
+        except OSError as e:  # python <2.5
+            if e.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else:
+                raise
+
+
+def clear_cache():
+    """Deletes existing pancake database."""
+    try:
+        os.remove(PICKLE_FILE)
     except:
-        pass
+        log.exception('clearing cache:')
 
 
 def main(market, market_timezone, disable_notify=False, disable_calendar=False):
@@ -357,11 +375,3 @@ def main(market, market_timezone, disable_notify=False, disable_calendar=False):
 
     prune_database(db)
     save_database(db)
-
-
-def clear_cache():
-    """Deletes existing pancake database."""
-    try:
-        os.remove(PICKLE_FILE)
-    except:
-        log.exception('clearing cache:')
