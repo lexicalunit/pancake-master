@@ -345,6 +345,15 @@ def clear_cache():
         log.exception('clearing cache:')
 
 
+def show_cache():
+    """Shows text digest of existing pancake database."""
+    try:
+        db = load_database()
+        log.info(text_digest(db.values()))
+    except:
+        log.exception('loading cache:')
+
+
 def main(market, market_timezone, disable_notify=False, disable_calendar=False):
     """Fetches pancake data, send notifications, and reports updates."""
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'config'))
