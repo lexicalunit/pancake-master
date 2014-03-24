@@ -13,7 +13,4 @@ Dynamic Webpage
 
 Static HTML+AJAX solution which fetches and displays the most up-to-date Master Pancake information. Deploy to a webserver with dependencies pancake.css, jquery, and underscore. [See it live](http://lexicalunit.github.io/pancake-master) on GitHub pages!
 
-Preview
-====
-
 ![alt tag](http://lexicalunit.github.io/pancake-master/resources/image/preview.png)
