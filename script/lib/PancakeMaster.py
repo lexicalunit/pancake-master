@@ -275,13 +275,16 @@ def update_calendar(pancakes, market_timezone):
     for pancake in pancakes:
         start_time = pancake['datetime']
         end_time = start_time + timedelta(hours=2)  # Master Pancakes typically run 2 hours
-
+        colorId = None
         if pancake['status'] == 'notonsale':
             event_status = 'Not yet on sale.'
+            colorId = 6
         elif pancake['status'] == 'onsale':
             event_status = 'On sale now!'
+            colorId = 10
         else:  # pancake['status'] == 'soldout':
             event_status = 'Sold out.'
+            colorId = 8
 
         for event in events:
             event_datetime = dateutil.parser.parse(event['start']['dateTime'])
@@ -291,15 +294,22 @@ def update_calendar(pancakes, market_timezone):
                 and event_datetime == start_time
             ):
                 if event['description'].startswith(event_status):
-                    log.info('{} already in calendar'.format(pancake['film']))
+                    log.info('{} already up to date'.format(pancake['film']))
                     break
                 else:
+                    if pancake['url']:
+                        event['description'] += '\n' + pancake['url']
+                    else:
+                        event['description'] = event_status
+                    event['colorId'] = colorId
+                    gcal.update_event(calendar['id'],event['id'],event)
                     log.warn('TODO: {} should be updated'.format(pancake['film']))
         else:
             newevent = {
                 'summary': pancake['film'],
                 'location': pancake['cinema'],
                 'description': event_status,
+                'colorId': colorId,
                 'start': {
                     'dateTime': start_time.isoformat(),
                     'timeZone': market_timezone.zone
