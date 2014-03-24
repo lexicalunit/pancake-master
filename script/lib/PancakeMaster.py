@@ -290,7 +290,7 @@ def update_calendar(pancakes, market_timezone):
                 and event['location'] == pancake['cinema']
                 and event_datetime == start_time
             ):
-                if event['description'].starts_with(event_status):
+                if event['description'].startswith(event_status):
                     log.info('{} already in calendar'.format(pancake['film']))
                     break
                 else:
