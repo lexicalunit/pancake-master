@@ -259,7 +259,7 @@ def prune_database(db):
             del db[key]
 
 
-def update_calendar(pancakes, market_timezone):
+def update_calendar(pancakes, market_timezone, remove_events=False):
     """Updates our Google Calendar with Master Pancake events."""
     if not pancakes:
         return
@@ -272,6 +272,11 @@ def update_calendar(pancakes, market_timezone):
 
     events = gcal.events(calendar['id'])
 
+    if remove_events:
+        for event in events:
+            gcal.delete_event(calendar['id'], event['id'])
+        events = []
+
     for pancake in pancakes:
         start_time = pancake['datetime']
         end_time = start_time + timedelta(hours=2)  # Master Pancakes typically run 2 hours
@@ -282,6 +287,22 @@ def update_calendar(pancakes, market_timezone):
             event_status = 'On sale now!'
         else:  # pancake['status'] == 'soldout':
             event_status = 'Sold out.'
+
+        newevent = {
+            'summary': pancake['film'],
+            'location': pancake['cinema'],
+            'description': event_status,
+            'start': {
+                'dateTime': start_time.isoformat(),
+                'timeZone': market_timezone.zone
+            },
+            'end': {
+                'dateTime': end_time.isoformat(),
+                'timeZone': market_timezone.zone
+            }
+        }
+        if pancake['url']:
+            newevent['description'] += '\n' + pancake['url']
 
         for event in events:
             event_datetime = dateutil.parser.parse(event['start']['dateTime'])
@@ -294,23 +315,8 @@ def update_calendar(pancakes, market_timezone):
                     log.info('{} already in calendar'.format(pancake['film']))
                     break
                 else:
-                    log.warn('TODO: {} should be updated'.format(pancake['film']))
+                    gcal.update_event(calendar['id'], event['id'], newevent)
         else:
-            newevent = {
-                'summary': pancake['film'],
-                'location': pancake['cinema'],
-                'description': event_status,
-                'start': {
-                    'dateTime': start_time.isoformat(),
-                    'timeZone': market_timezone.zone
-                },
-                'end': {
-                    'dateTime': end_time.isoformat(),
-                    'timeZone': market_timezone.zone
-                }
-            }
-            if pancake['url']:
-                newevent['description'] += '\n' + pancake['url']
             gcal.insert_event(calendar['id'], newevent)
 
 
@@ -354,7 +360,8 @@ def show_cache():
         log.exception('loading cache:')
 
 
-def main(market, market_timezone, disable_notify=False, disable_calendar=False):
+def main(market, market_timezone,
+         disable_notify=False, disable_calendar=False, remove_events=False):
     """Fetches pancake data, send notifications, and reports updates."""
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'config'))
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'cache'))
@@ -372,7 +379,7 @@ def main(market, market_timezone, disable_notify=False, disable_calendar=False):
 
     if not disable_calendar:
         try:
-            update_calendar(updated, market_timezone)
+            update_calendar(updated, market_timezone, remove_events=remove_events)
         except:
             log.exception('calendar error:')
 

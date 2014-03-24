@@ -49,6 +49,8 @@ if __name__ == '__main__':
                         help='clear database cache before running')
     parser.add_argument('--list', '-l', action='store_true',
                         help='list currently cached pancake database')
+    parser.add_argument('--remove', '-r', action='store_true',
+                        help='remove google calendar events before inserting new ones')
     args = parser.parse_args()
 
     try:
@@ -65,4 +67,5 @@ if __name__ == '__main__':
         sys.exit(0)
 
     pm.main(args.market, market_timezone,
-            disable_notify=args.disable_notify, disable_calendar=args.disable_calendar)
+            disable_notify=args.disable_notify, disable_calendar=args.disable_calendar,
+            remove_events=args.remove)

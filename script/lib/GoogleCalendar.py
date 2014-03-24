@@ -23,6 +23,14 @@ class GoogleCalendar(object):
         """Inserts a new calendar event."""
         self.service.events().insert(calendarId=calid, body=event_body).execute()
 
+    def update_event(self, calid, eid, event_body):
+        """Updates an existing calendar event."""
+        self.service.events().update(calendarId=calid, eventId=eid, body=event_body).execute()
+
+    def delete_event(self, calid, eid):
+        """Deletes an existing calendar event."""
+        self.service.events().delete(calendarId=calid, eventId=eid).execute()
+
     def events(self, calid):
         """Gets the list of calendar events."""
         page_token = None
