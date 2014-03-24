@@ -30,9 +30,14 @@ def deploy_project(local_dir, remote_dir, exclusions=[]):
 
 
 @task
-def deploy():
-    """Deploys web and script to remote server."""
+def publish():
+    """Publishes web implementation and resources to remote server."""
     deploy_project('web', conf['web_remote_dir'],
                    ['.git', 'fabfile.py', 'cache', 'config', 'template'])
+
+
+@task
+def deploy():
+    """Deploys notification script to remote server."""
     deploy_project('script', conf['script_remote_dir'],
                    ['.git', 'fabfile.py', 'cache', 'config', 'js', 'image'])
