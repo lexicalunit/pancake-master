@@ -1,16 +1,19 @@
-pancake.py
+Notification Script
 ====
 
 Python script that searches for Master Pancake showtimes in Austin. Run it periodically to send out email notifications whenever a new pancake is detected, or when a previously detected pancake goes on sale. Never miss out on getting tickets again!
 
-Dependencies: beautifulsoup4, dateutil, google-api-python-client, httplib2, oauth2client, pytz, requests, tinycss, uritemplate
+License: none (public domain)
 
-index.html
+dependencies: beautifulsoup4, dateutil, google-api-python-client, httplib2,
+              oauth2client, pytz, requests, tinycss, uritemplate
+
+Dynamic Webpage
 ====
 
-Static HTML+AJAX solution which fetches and displays the most up-to-date Master Pancake information. Deploy to a webserver with dependencies pancake.css, jquery, and underscore.
+Static HTML+AJAX solution which fetches and displays the most up-to-date Master Pancake information. Deploy to a webserver with dependencies pancake.css, jquery, and underscore. [See it live](http://lexicalunit.github.io/pancake-master) on GitHub pages!
 
 Preview
 ====
 
-![alt tag](http://lexicalunit.com/shares/pcake.png)
+![alt tag](http://lexicalunit.github.io/pancake-master/resources/image/preview.png)
