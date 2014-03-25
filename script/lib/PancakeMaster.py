@@ -9,22 +9,20 @@ import logging
 import os
 import pickle
 import smtplib
-import tinycss
 
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from itertools import groupby, count
-from InlineCSS import styled
 from GoogleCalendar import GoogleCalendar
+from inlinestyler.utils import inline_css
+from itertools import groupby, count
 
 
 RESOURCES_DIRECTORY = 'resources'
 CREDENTIALS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'credentials.dat')
 PICKLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'cache', 'pancake.pickle')
 RECIPIENTS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'pancake.list')
-STYLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'css', 'pancake.css')
 TEMPLATE_FILE = os.path.join(RESOURCES_DIRECTORY, 'template', 'pancake.html')
 
 DATE_FORMAT = '%A, %B %d, %Y'
@@ -121,26 +119,12 @@ def html_digest(pancakes):
 
     content = str(soup)
 
-    # load CSS stylesheet
-    try:
-        parser = tinycss.make_parser('page3')
-        stylesheet = parser.parse_stylesheet_file(STYLE_FILE)
-        style = {
-            r.selector.as_css(): {
-                d.name: d.value.as_css() for d in r.declarations
-            } for r in stylesheet.rules
-        }
-    except Exception as e:
-        log.warn('could not load CSS style file: {}'.format(e))
-        style = None
-
-    # load HTML template
     try:
         template = open(TEMPLATE_FILE, 'r').read()
-        return styled(template.format(content=content), style)
+        return inline_css(template.format(content=content))
     except Exception as e:
         log.warn('could not load HTML template file: {}'.format(e))
-        return styled(content, style)
+        return inline_css(content)
 
 
 def text_digest(pancakes):

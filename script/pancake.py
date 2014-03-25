@@ -2,7 +2,7 @@
 
 # License: none (public domain)
 # dependencies: beautifulsoup4, dateutil, google-api-python-client, httplib2,
-#               oauth2client, pytz, requests, tinycss, uritemplate
+#               oauth2client, pytz, requests, inlinestyler, uritemplate
 
 import argparse
 import lib.PancakeMaster as pm
