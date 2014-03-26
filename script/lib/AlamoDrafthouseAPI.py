@@ -100,6 +100,9 @@ def query_pancakes(market_id, market_timezone):
             callback='whatever')  # sadly, this resource *requires* JSONP callback parameter
         log.debug('cinema response:\n{}'.format(format_json(data)))
 
+        if 'Cinema' not in data:
+            continue
+
         for date_data in data['Cinema']['Dates']:
             for film_data in date_data['Films']:
                 film = sanitize_film_title(film_data['Film'])
