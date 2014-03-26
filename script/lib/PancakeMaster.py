@@ -9,20 +9,22 @@ import logging
 import os
 import pickle
 import smtplib
+import tinycss
 
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from GoogleCalendar import GoogleCalendar
-from inlinestyler.utils import inline_css
 from itertools import groupby, count
+from InlineCSS import styled
+from GoogleCalendar import GoogleCalendar
 
 
 RESOURCES_DIRECTORY = 'resources'
 CREDENTIALS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'credentials.dat')
 PICKLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'cache', 'pancake.pickle')
 RECIPIENTS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'pancake.list')
+STYLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'css', 'pancake.css')
 TEMPLATE_FILE = os.path.join(RESOURCES_DIRECTORY, 'template', 'pancake.html')
 
 DATE_FORMAT = '%A, %B %d, %Y'
@@ -119,12 +121,26 @@ def html_digest(pancakes):
 
     content = str(soup)
 
+    # load CSS stylesheet
+    try:
+        parser = tinycss.make_parser('page3')
+        stylesheet = parser.parse_stylesheet_file(STYLE_FILE)
+        style = {
+            r.selector.as_css(): {
+                d.name: d.value.as_css() for d in r.declarations
+            } for r in stylesheet.rules
+        }
+    except Exception as e:
+        log.warn('could not load CSS style file: {}'.format(e))
+        style = None
+
+    # load HTML template
     try:
         template = open(TEMPLATE_FILE, 'r').read()
-        return inline_css(template.format(content=content))
+        return styled(template.format(content=content), style)
     except Exception as e:
         log.warn('could not load HTML template file: {}'.format(e))
-        return inline_css(content)
+        return styled(content, style)
 
 
 def text_digest(pancakes):
@@ -155,6 +171,9 @@ def notify(pancakes, recipients):
     """Sends digest email(s) to recipients given pancakes (no email sent if pancakes is empty)."""
     if not pancakes:
         return
+
+    print html_digest(pancakes)
+    return
 
     plain = text_digest(pancakes)
     log.info('digest:\n{}'.format(plain))
@@ -351,7 +370,7 @@ def show_cache():
 
 
 def main(market, market_timezone,
-         disable_notify=False, disable_calendar=False, remove_events=False):
+         disable_notify=False, disable_calendar=False, remove_events=False, disable_fetch=False):
     """Fetches pancake data, send notifications, and reports updates."""
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'config'))
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'cache'))
@@ -359,13 +378,16 @@ def main(market, market_timezone,
     db = load_database()
     recipients = load_rerecipients()
 
-    try:
-        pancakes = api.query_pancakes(market, market_timezone)
-    except:
-        pancakes = []
-        log.exception('api error:')
+    if not disable_fetch:
+        try:
+            pancakes = api.query_pancakes(market, market_timezone)
+        except:
+            pancakes = []
+            log.exception('api error:')
 
-    updated = update_pancakes(db, pancakes)
+        updated = update_pancakes(db, pancakes)
+    else:
+        updated = db.values()
 
     if not disable_calendar:
         try:

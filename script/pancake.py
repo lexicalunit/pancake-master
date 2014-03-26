@@ -2,7 +2,7 @@
 
 # License: none (public domain)
 # dependencies: beautifulsoup4, dateutil, google-api-python-client, httplib2,
-#               oauth2client, pytz, requests, inlinestyler, uritemplate
+#               oauth2client, pytz, requests, tinycss, uritemplate
 
 import argparse
 import lib.PancakeMaster as pm
@@ -45,6 +45,8 @@ if __name__ == '__main__':
                         help='disable email notification')
     parser.add_argument('--disable-calendar', '-c', action='store_true',
                         help='disable google calendar updates')
+    parser.add_argument('--disable-fetch', '-f', action='store_true',
+                        help='disable fetching updates, use local cache instead')
     parser.add_argument('--clear-cache', '-x', action='store_true',
                         help='clear database cache before running')
     parser.add_argument('--list', '-l', action='store_true',
@@ -68,4 +70,4 @@ if __name__ == '__main__':
 
     pm.main(args.market, market_timezone,
             disable_notify=args.disable_notify, disable_calendar=args.disable_calendar,
-            remove_events=args.remove)
+            remove_events=args.remove, disable_fetch=args.disable_fetch)
