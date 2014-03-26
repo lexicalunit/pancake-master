@@ -172,9 +172,6 @@ def notify(pancakes, recipients):
     if not pancakes:
         return
 
-    print html_digest(pancakes)
-    return
-
     plain = text_digest(pancakes)
     log.info('digest:\n{}'.format(plain))
 
