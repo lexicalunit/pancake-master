@@ -13,7 +13,7 @@ class GoogleCalendar(object):
         """Creates Google Calendar API interface using the given credentials."""
         storage = file.Storage(credentials_filename)
         credentials = storage.get()
-        if credentials is None or credentials.invalid:
+        if not credentials or credentials.invalid:
             raise Exception('Credentials invalid or missing :(')
         http = httplib2.Http(disable_ssl_certificate_validation=True)
         http = credentials.authorize(http)
@@ -33,24 +33,24 @@ class GoogleCalendar(object):
 
     def events(self, calid):
         """Gets the list of calendar events."""
-        page_token = None
+        page = None
         events = []
         while True:
-            event_list = self.service.events().list(calendarId=calid, pageToken=None).execute()
+            event_list = self.service.events().list(calendarId=calid, pageToken=page).execute()
             events.extend(event_list['items'])
-            page_token = event_list.get('nextPageToken')
-            if not page_token:
+            page = event_list.get('nextPageToken')
+            if not page:
                 break
         return events
 
     def calendar_list(self):
         """Gets lits of google calendars."""
-        page_token = None
+        page = None
         calendars = []
         while True:
-            calendar_list = self.service.calendarList().list(pageToken=None).execute()
+            calendar_list = self.service.calendarList().list(pageToken=page).execute()
             calendars.extend(calendar_list['items'])
-            page_token = calendar_list.get('nextPageToken')
-            if not page_token:
+            page = calendar_list.get('nextPageToken')
+            if not page:
                 break
         return calendars
