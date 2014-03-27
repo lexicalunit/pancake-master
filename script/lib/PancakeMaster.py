@@ -212,7 +212,7 @@ def save_database(db):
         with gzip.GzipFile(filename, 'wb') as f:
             f.write(pickle.dumps(db, 1))
     except Exception as e:
-        log.error('load failure: {}'.format(e))
+        log.error('save failure: {}'.format(e))
         raise
 
 
