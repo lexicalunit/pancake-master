@@ -27,7 +27,7 @@ def format_uid(uid):
 
 def sanitize_film_title(title):
     """Sanitize utf-8 film title, returns ASCII title."""
-    return str(title.replace(u'\u2019', "'").replace(u'\u2018', ''))
+    return title.replace(u'\u2019', "'").replace(u'\u2018', '').encode('utf-8').strip()
 
 
 def parse_datetime(date_str, time_str, market_timezone):
