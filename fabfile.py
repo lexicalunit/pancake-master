@@ -2,10 +2,15 @@ import logging
 import os
 import yaml
 
-from fabric.api import lcd, env, task, local
-from fabric.contrib.project import rsync_project
-from functools import partial
+from fabric.api import lcd, task, local
 from shutil import rmtree
+
+USE_RSYNC_PROJECT = True
+
+if USE_RSYNC_PROJECT:
+    from fabric.api import env
+    from fabric.contrib.project import rsync_project
+    from functools import partial
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -35,7 +40,24 @@ def export():
 def deploy_project(local_dir, remote_dir, exclude=[]):
     """Deploy the entire project at local_dir to remote_dir, excluding the given paths."""
     export()
-    sync = partial(rsync_project, remote_dir=remote_dir, exclude=exclude, delete=True)
+
+    if USE_RSYNC_PROJECT:
+        sync = partial(rsync_project, remote_dir=remote_dir, exclude=exclude, delete=True,
+                       extra_opts="-e 'ssh -l {}'".format(conf['user']))
+    else:
+        exclude = ['.git', 'fabfile.py', 'cache', 'config', '*.log', 'js', 'image']
+        cmd = "rsync -pthrvz --delete"
+        cmd = cmd + " {exclude} --rsh='ssh  -p 22 ' -e 'ssh -l {user}' {local_dir} {host}:{remote_dir}"
+        cmd_params = {'user': conf['user'],
+                      'host': conf['host'],
+                      'remote_dir': remote_dir,
+                      'exclude': ' '.join("--exclude '{}'".format(x) for x in exclude)}
+
+        def sync(local_dir):
+            cmd_params['local_dir'] = local_dir
+            print "wtf = ", cmd.format(**cmd_params)
+            local(cmd.format(**cmd_params))
+
     try:
         with lcd(workspace):
             with lcd(local_dir):
