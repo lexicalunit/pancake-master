@@ -20,6 +20,7 @@ try:
     conf = yaml.load(open(os.path.join(repo_root, conf_file), 'rb').read())
 except:
     log.exception('error: unable to read {} config file:'.format(conf_file))
+    raise
 
 env.user = conf['user']
 env.hosts = ['{}@{}:22'.format(env.user, host) for host in conf['hosts']]
