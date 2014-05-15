@@ -13,7 +13,7 @@ from pytz import timezone
 
 
 def setup_logging(level):
-    """Setups up root logger to log to filename and console simultaneously."""
+    """Sets up root logger to log to filename and console simultaneously."""
     log = logging.getLogger()
     log.setLevel(level)
 
