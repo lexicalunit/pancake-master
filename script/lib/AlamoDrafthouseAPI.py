@@ -11,6 +11,9 @@ ALAMO_DATETIME_FORMAT = '%A, %B %d, %Y - %I:%M%p'
 
 CINEMA_SESSIONS_URL = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx'
 MARKET_SESSIONS_URL = 'https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx'
+FILM_OVERRIDES = {
+    'Action Pack: THE ULTIMATE WILLY WONKA PARTY'
+}
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +55,7 @@ def query(url, **kwargs):
     is_jsonp = 'callback' in kwargs
 
     try:
+        log.info('querying url "{}" with params {}'.format(url, kwargs))
         resp = requests.get(url, params=kwargs, verify=False)
 
         if is_jsonp:
@@ -108,8 +112,9 @@ def query_pancakes(market_id, market_timezone):
                 film = sanitize_film_title(film_data['Film'])
                 film_uid = str(film_data['FilmId'])
 
-                if not all(s in film.lower() for s in ['pancake', 'master']):
-                    continue  # DO NOT WANT!
+                if film not in FILM_OVERRIDES:
+                    if not all(s in film.lower() for s in ['pancake', 'master']):
+                        continue  # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
                     status = str(session_data['SessionStatus'])
