@@ -17,8 +17,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from itertools import groupby, count
 from InlineCSS import styled
-from GoogleCalendar import GoogleCalendar
 
+log = logging.getLogger(__name__)
+
+try:
+    from GoogleCalendar import GoogleCalendar
+    HAS_GOOGLE_CALENDAR = True
+except ImportError as e:
+    log.warning('warning: {}'.format(e))
+    HAS_GOOGLE_CALENDAR = False
 
 RESOURCES_DIRECTORY = 'resources'
 CREDENTIALS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'credentials.dat')
@@ -29,8 +36,6 @@ TEMPLATE_FILE = os.path.join(RESOURCES_DIRECTORY, 'template', 'pancake.html')
 
 DATE_FORMAT = '%A, %B %d, %Y'
 TIME_FORMAT = '%I:%M%p'
-
-log = logging.getLogger(__name__)
 
 
 def date_string(dt):
@@ -261,6 +266,9 @@ def prune_database(db):
 
 def update_calendar(pancakes, market_timezone, remove_events=False):
     """Updates our Google Calendar with Master Pancake events."""
+    if not HAS_GOOGLE_CALENDAR:
+        return
+
     if not pancakes:
         return
 
