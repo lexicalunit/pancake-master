@@ -1,10 +1,11 @@
 # Pancake specific stuff
-resources/config/pancake.list
-resources/config/credentials.dat
-resources/cache/pancake.pickle
-script/pancake.log
 deploy.yaml
 gh-pages
+resources/cache/pancake.pickle
+resources/config/credentials.dat
+resources/config/overrides.list
+resources/config/pancake.list
+script/pancake.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -21,7 +22,6 @@ build/
 develop-eggs/
 dist/
 eggs/
-lib/
 lib64/
 parts/
 sdist/

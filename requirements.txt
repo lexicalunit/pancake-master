@@ -1,0 +1,11 @@
+beautifulsoup4
+fabric
+google-api-python-client
+httplib2
+oauth2client
+python-dateutil
+pytz
+pyyaml
+requests
+tinycss
+uritemplate

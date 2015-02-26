@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# License: none (public domain)
-# dependencies: beautifulsoup4, dateutil, google-api-python-client, httplib2,
-#               oauth2client, pytz, requests, tinycss, uritemplate
-
 import argparse
 import lib.PancakeMaster as pm
 import logging
@@ -14,8 +10,7 @@ from pytz import timezone
 
 def setup_logging(level):
     """Sets up root logger to log to filename and console simultaneously."""
-    log = logging.getLogger()
-    log.setLevel(level)
+    logging.basicConfig(level=level)
 
     fh = logging.FileHandler('pancake.log')
     fh.setLevel(level)
@@ -26,6 +21,9 @@ def setup_logging(level):
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
+
+    log = logging.getLogger()
+    log.setLevel(level)
 
     log.addHandler(ch)
     log.addHandler(fh)

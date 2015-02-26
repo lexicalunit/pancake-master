@@ -18,6 +18,7 @@ from email.mime.text import MIMEText
 from itertools import groupby, count
 from InlineCSS import styled
 
+logging.basicConfig()
 log = logging.getLogger(__name__)
 
 try:
@@ -31,6 +32,7 @@ RESOURCES_DIRECTORY = 'resources'
 CREDENTIALS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'credentials.dat')
 PICKLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'cache', 'pancake.pickle')
 RECIPIENTS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'pancake.list')
+OVERRIDES_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'overrides.list')
 STYLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'css', 'pancake.css')
 TEMPLATE_FILE = os.path.join(RESOURCES_DIRECTORY, 'template', 'pancake.html')
 
@@ -343,6 +345,15 @@ def load_rerecipients():
     return []
 
 
+def load_overrides():
+    """Returns list of film overrides to notify for in addition to pancakes."""
+    try:
+        return [line.strip() for line in open(OVERRIDES_FILE)]
+    except:
+        pass
+    return []
+
+
 def mkdir_p(path):
     """Make directory without error if it already exists."""
     try:
@@ -382,10 +393,11 @@ def main(market, market_timezone,
 
     db = load_database()
     recipients = load_rerecipients()
+    overrides = load_overrides()
 
     if not disable_fetch:
         try:
-            pancakes = api.query_pancakes(market, market_timezone)
+            pancakes = api.query_pancakes(market, market_timezone, overrides)
         except:
             pancakes = []
             log.exception('api error:')
