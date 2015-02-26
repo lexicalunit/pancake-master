@@ -187,7 +187,7 @@ def notify(pancakes, recipients):
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = 'Pancake Master: {}'.format(datetime_string(datetime.now()))
-    msg['To'] = ', '.join(recipients)
+    msg['To'] = 'undisclosed-recipients'
     msg['From'] = recipients[0]
     msg.attach(MIMEText(plain, 'plain'))
     msg.attach(MIMEText(html_digest(pancakes), 'html'))
