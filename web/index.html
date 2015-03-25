@@ -26,8 +26,10 @@ var pancakes = [];
 })();
 
 overrides = [];
+use_overrides = false;
 if("q" in params) {
     overrides = params["q"].split(",");
+    use_overrides = true;
 }
 
 function capwords(text) {
@@ -92,7 +94,7 @@ function parse_cinema(data) {
             var film_data = date_data.Films[j];
             var is_pancake = (film_data.Film.match(/pancake/i) && film_data.Film.match(/master/i));
             var is_override = matches_override(film_data.Film);
-            if(!is_pancake && !is_override) {
+            if((!use_overrides && !is_pancake) || (use_overrides && !is_override)) {
                 continue; // DO NOT WANT!
             }
             for(var k = 0; k < film_data.Sessions.length; k++) {
