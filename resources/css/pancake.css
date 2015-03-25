@@ -21,13 +21,10 @@ a {
     text-decoration: none;
 }
 
-#main {
+.main {
     width: 80%;
     padding: 0;
-    margin-top: 0;
-    margin-right: auto;
-    margin-bottom: 0;
-    margin-left: auto;
+    margin: 0 auto 0 auto;
     border: 0;
 }
 
@@ -35,7 +32,7 @@ a {
     color: #E9E5C8;
     background-color: #A31E21;
     margin: 5% 0 0 0;
-    padding: 2% 2% 0% 2%;
+    padding: 2% 2% 0 2%;
     border-top: 8px solid #E2C162;
     border-right: 8px solid #E2C162;
     border-bottom: 0;
@@ -104,12 +101,9 @@ a {
     text-decoration: line-through;
 }
 
-#footer {
+.footer {
     width: 80%;
-    margin-top: 0;
-    margin-right: auto;
-    margin-bottom: 0;
-    margin-left: auto;
+    margin: 0 auto 0 auto;
     padding: 0;
     border-top: 2em solid #F2F2F2;
     border-right: 0;
@@ -119,14 +113,14 @@ a {
     line-height: 150%;
 }
 
-#footer a {
+.footer a {
     color: blue;
 }
 
-#footer a:hover {
-    color: #8DE1FF !important;
+.footer a:hover {
+    color: #8DE1FF;
 }
 
 li a:hover {
-    color: #8DE1FF !important;
+    color: #8DE1FF;
 }

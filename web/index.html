@@ -6,13 +6,29 @@
 <link rel="stylesheet" type="text/css" href="resources/css/reset.css" />
 <link rel="stylesheet" type="text/css" href="resources/css/pancake.css" />
 <link rel="stylesheet" type="text/css" href="resources/css/pancake-status.css" />
-<link rel="icon" type="image/png" href="resources/image/favicon.ico">
+<link rel="icon" type="image/png" href="resources/image/favicon.ico" />
 <script type="text/javascript" src="resources/js/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="resources/js/jquery.fittext.js"></script>
 <script type="text/javascript" src="resources/js/underscore-min.js"></script>
 <script type="text/javascript">
+var params = {};
 var status_number = 0;
 var pancakes = [];
+
+(window.onpopstate = function () {
+    var match,
+        pl     = /\+/g,  // Regex for replacing addition symbol with a space
+        search = /([^&=]+)=?([^&]*)/g,
+        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+        query  = window.location.search.substring(1);
+    while (match = search.exec(query))
+       params[decode(match[1])] = decode(match[2]);
+})();
+
+overrides = [];
+if("q" in params) {
+    overrides = params["q"].split(",");
+}
 
 function capwords(text) {
     return text.replace(/\w\S*/g, function(txt) {
@@ -37,14 +53,11 @@ function daystr() {
 
 function status(text) {
     window.status_number++;
-
     var li = document.createElement('li');
     li.className = "status_item";
     li.id = "status_" + window.status_number;
     li.innerHTML = text;
-
     $("#statuses").append(li);
-
     return window.status_number;
 }
 
@@ -54,30 +67,36 @@ function status_update(text, number) {
 
 function show_pancake(pancake) {
     window.pancakes.push(pancake);
-
     var template = _.template($("script.template").html());
     $("#main").html(template(window.pancakes));
-
     $("h1").fitText(1.5);
     $("h2").fitText(3)
+}
+
+function matches_override(title) {
+    for(var o = 0; o < overrides.length; o++) {
+        var re = new RegExp(overrides[o], 'i');
+        if(title.match(re)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function parse_cinema(data) {
     var status_message = "Parsing " + data.Cinema.CinemaName + " Data...";
     var status_id = status(status_message);
-
     for(var i = 0; i < data.Cinema.Dates.length; i++) {
         var date_data = data.Cinema.Dates[i];
         for(var j = 0; j < date_data.Films.length; j++) {
             var film_data = date_data.Films[j];
-
-            if(!film_data.Film.match(/pancake/i) || !film_data.Film.match(/master/i)) {
+            var is_pancake = (film_data.Film.match(/pancake/i) && film_data.Film.match(/master/i));
+            var is_override = matches_override(film_data.Film);
+            if(!is_pancake && !is_override) {
                 continue; // DO NOT WANT!
             }
-
             for(var k = 0; k < film_data.Sessions.length; k++) {
                 var session_data = film_data.Sessions[k];
-
                 pancake = {
                     film: capwords(film_data.Film.replace("Master Pancake: ", "").toLowerCase())
                     , film_uid: film_data.FilmId
@@ -88,19 +107,16 @@ function parse_cinema(data) {
                     , status: session_data.SessionStatus
                     , url: session_data.SessionStatus == "onsale" ? session_data.SessionSalesURL : null
                 };
-
                 show_pancake(pancake);
             }
         }
     }
-
     status_update(status_message + " done.", status_id);
 }
 
 function build_cinema(cinema) {
     var status_message = "Fetching " + cinema.CinemaName + " Data...";
     var status_id = status(status_message);
-
     $.ajax({
         url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx"
         , dataType: "jsonp"
@@ -110,26 +126,22 @@ function build_cinema(cinema) {
         }
         , success: parse_cinema
     });
-
     status_update(status_message + " done.", status_id);
 }
 
 function build_cinemas(cinemas) {
     var status_message = "Parsing Cinemas Data...";
     var status_id = status(status_message);
-
     for(var i = 0; i < cinemas.length; i++) {
         var cinema = cinemas[i];
         build_cinema(cinema);
     }
-
     status_update(status_message + " done.", status_id);
 }
 
 function parse_market(data) {
     var status_message = "Parsing Market Data...";
     var status_id = status(status_message);
-
     var cinemas = [];
     for(var i = 0; i < data.Market.Cinemas.length; i++) {
         var cinema = data.Market.Cinemas[i];
@@ -140,16 +152,13 @@ function parse_market(data) {
         };
         cinemas.push(item);
     }
-
     status_update(status_message + " done.", status_id);
-
     build_cinemas(cinemas);
 }
 
 function build_market() {
     var status_message = "Fetching Market Data...";
     var status_id = status(status_message);
-
     $.ajax({
         url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx"
         , dataType: "jsonp"
@@ -160,7 +169,6 @@ function build_market() {
         }
         , success: parse_market
     });
-
     status_update(status_message + " done.", status_id);
 }
 
@@ -173,7 +181,6 @@ function by_location(pancakes) {
 function pancake_time(pancake) {
     var span = document.createElement('span');
     span.className = pancake.status;
-
     if(pancake.status == "onsale") {
         var a = document.createElement('a');
         a.href = pancake.url;
@@ -182,7 +189,6 @@ function pancake_time(pancake) {
     } else {
         span.innerHTML = pancake.time;
     }
-
     return span.outerHTML;
 }
 
@@ -207,14 +213,14 @@ _.templateSettings.variable = "rc";
 </script>
 </head>
 <body onload="build_market();">
-<div id="main"></div>
-<div id="status">
-    <a href="#" class="tooltip">
+<div class="main" id="main"></div>
+<div class="status">
+    <div class="tooltip">
         + status
-        <div><ul id="statuses"></ul></div>
-    </a>
+        <div class="tooltip_content"><ul id="statuses"><li class="status_header">Status Updates</li></ul></div>
+    </div>
 </div>
-<div id="footer">
+<div class="footer">
     <a href="https://github.com/lexicalunit/pancake-master">pancake-master on github.com</a><br />
 </div>
 </body>
