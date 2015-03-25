@@ -126,16 +126,28 @@ li a:hover {
 }
 
 .search {
-    position: fixed;
+    position: absolute;
     top: 10px;
-    right: 10px;
-    width: 500px;
+    left: 10px;
+    padding: 5px 8px 5px 8px;
+    background-color: rgba(163, 30, 33, 0.4);
+    border: 1px solid rgba(226, 193, 98, 0.4);
+    border-radius: 15px;
 }
 
-.search input {
-    width: 85%;
+.search input, .search button {
+    font-size: 125%;
+    padding: 3px;
+    border: 0;
+    border-radius: 5px;
 }
 
-.saerch button {
-    width: 10%;
+.search button {
+    margin-left: 5px;
+    background-color: #F5F5F5;
+}
+
+.search button:hover {
+    margin-left: 5px;
+    background-color: #D5D5D5;
 }
