@@ -28,7 +28,7 @@ var pancakes = [];
 overrides = [];
 use_overrides = false;
 if("q" in params) {
-    overrides = params["q"].split(",");
+    overrides = params["q"].split(/[\s,]+/);
     use_overrides = true;
 }
 
@@ -225,5 +225,14 @@ _.templateSettings.variable = "rc";
 <div class="footer">
     <a href="https://github.com/lexicalunit/pancake-master">pancake-master on github.com</a><br />
 </div>
+<div class="search">
+    <form action="" method="get">
+        <input type="text" id="q" name="q" />
+        <button type="submit" value="search">Search</button>
+    </form>
+</div>
+<script type="text/javascript">
+    $("#q").val(params["q"]);
+</script>
 </body>
 </html>

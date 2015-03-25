@@ -124,3 +124,18 @@ a {
 li a:hover {
     color: #8DE1FF;
 }
+
+.search {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 500px;
+}
+
+.search input {
+    width: 85%;
+}
+
+.saerch button {
+    width: 10%;
+}
