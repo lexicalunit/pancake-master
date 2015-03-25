@@ -41,16 +41,12 @@ if __name__ == '__main__':
                         default='US/Central', help='timezone for showtimes')
     parser.add_argument('--disable-notify', '-n', action='store_true',
                         help='disable email notification')
-    parser.add_argument('--disable-calendar', '-c', action='store_true',
-                        help='disable google calendar updates')
     parser.add_argument('--disable-fetch', '-f', action='store_true',
                         help='disable fetching updates, use local cache instead')
     parser.add_argument('--clear-cache', '-x', action='store_true',
                         help='clear database cache before running')
     parser.add_argument('--list', '-l', action='store_true',
                         help='list currently cached pancake database')
-    parser.add_argument('--remove_events', '-r', action='store_true',
-                        help='remove google calendar events before inserting new ones')
     args = parser.parse_args()
 
     try:
@@ -67,5 +63,5 @@ if __name__ == '__main__':
         sys.exit(0)
 
     pm.main(args.market, market_timezone,
-            disable_notify=args.disable_notify, disable_calendar=args.disable_calendar,
-            remove_events=args.remove_events, disable_fetch=args.disable_fetch)
+            disable_notify=args.disable_notify,
+            disable_fetch=args.disable_fetch)

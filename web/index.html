@@ -77,7 +77,7 @@ function parse_cinema(data) {
 
             for(var k = 0; k < film_data.Sessions.length; k++) {
                 var session_data = film_data.Sessions[k];
-                
+
                 pancake = {
                     film: capwords(film_data.Film.replace("Master Pancake: ", "").toLowerCase())
                     , film_uid: film_data.FilmId
@@ -149,7 +149,7 @@ function parse_market(data) {
 function build_market() {
     var status_message = "Fetching Market Data...";
     var status_id = status(status_message);
-    
+
     $.ajax({
         url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx"
         , dataType: "jsonp"
@@ -215,8 +215,6 @@ _.templateSettings.variable = "rc";
     </a>
 </div>
 <div id="footer">
-    <a href="http://lexicalunit.github.io/pancake-master">Current showtimes from Pancake Master</a><br />
-    <a href="https://www.google.com/calendar/embed?src=hro2l5sss2c0231qla9d79fpcg%40group.calendar.google.com&ctz=US/Central">Calendar of showtimes</a><br />
     <a href="https://github.com/lexicalunit/pancake-master">pancake-master on github.com</a><br />
 </div>
 </body>

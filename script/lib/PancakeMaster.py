@@ -1,7 +1,6 @@
 # License: none (public domain)
 
 import AlamoDrafthouseAPI as api
-import dateutil.parser
 import errno
 import gzip
 import hashlib
@@ -12,7 +11,7 @@ import smtplib
 import tinycss
 
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from itertools import groupby, count
@@ -21,15 +20,7 @@ from InlineCSS import styled
 logging.basicConfig()
 log = logging.getLogger(__name__)
 
-try:
-    from GoogleCalendar import GoogleCalendar
-    HAS_GOOGLE_CALENDAR = True
-except ImportError as e:
-    log.warning('warning: {}'.format(e))
-    HAS_GOOGLE_CALENDAR = False
-
 RESOURCES_DIRECTORY = 'resources'
-CREDENTIALS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'credentials.dat')
 PICKLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'cache', 'pancake.pickle')
 RECIPIENTS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'pancake.list')
 OVERRIDES_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'overrides.list')
@@ -266,76 +257,6 @@ def prune_database(db):
             del db[key]
 
 
-def update_calendar(pancakes, market_timezone, remove_events=False):
-    """Updates our Google Calendar with Master Pancake events."""
-    if not HAS_GOOGLE_CALENDAR:
-        return
-
-    if not pancakes:
-        return
-
-    gcal = GoogleCalendar(CREDENTIALS_FILE)
-    calendar = next((c for c in gcal.calendar_list() if c['summary'] == 'Master Pancakes'), None)
-
-    if not calendar:
-        raise Exception("Can't find 'Master Pancakes' calendar")
-
-    events = gcal.events(calendar['id'])
-
-    if remove_events:
-        for event in events:
-            gcal.delete_event(calendar['id'], event['id'])
-        events = []
-
-    for pancake in pancakes:
-        start_time = pancake['datetime']
-        end_time = start_time + timedelta(hours=2)  # Master Pancakes typically run 2 hours
-
-        color = None
-        if pancake['status'] == 'notonsale':
-            event_status = 'Not yet on sale.'
-            color = 6
-        elif pancake['status'] == 'onsale':
-            event_status = 'On sale now!'
-            color = 10
-        else:  # pancake['status'] == 'soldout':
-            event_status = 'Sold out.'
-            color = 8
-
-        newevent = {
-            'summary': pancake['film'],
-            'location': pancake['cinema'],
-            'description': event_status,
-            'colorId': color,
-            'start': {
-                'dateTime': start_time.isoformat(),
-                'timeZone': market_timezone.zone
-            },
-            'end': {
-                'dateTime': end_time.isoformat(),
-                'timeZone': market_timezone.zone
-            }
-        }
-        if pancake['url']:
-            newevent['description'] += '\n' + pancake['url']
-
-        for event in events:
-            event_datetime = dateutil.parser.parse(event['start']['dateTime'])
-            if (
-                event['summary'] == pancake['film']
-                and event['location'] == pancake['cinema']
-                and event_datetime == start_time
-            ):
-                if event['description'].startswith(event_status):
-                    log.info('{} already up to date'.format(pancake['film']))
-                else:
-                    event.update(newevent)
-                    gcal.update_event(calendar['id'], event['id'], event)
-                break
-        else:
-            gcal.insert_event(calendar['id'], newevent)
-
-
 def load_rerecipients():
     """Returns list of email addresses to notify."""
     try:
@@ -385,8 +306,7 @@ def show_cache():
         log.exception('loading cache:')
 
 
-def main(market, market_timezone,
-         disable_notify=False, disable_calendar=False, remove_events=False, disable_fetch=False):
+def main(market, market_timezone, disable_notify=False, disable_fetch=False):
     """Fetches pancake data, send notifications, and reports updates."""
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'config'))
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'cache'))
@@ -405,12 +325,6 @@ def main(market, market_timezone,
         updated = update_pancakes(db, pancakes)
     else:
         updated = db.values()
-
-    if not disable_calendar:
-        try:
-            update_calendar(updated, market_timezone, remove_events=remove_events)
-        except:
-            log.exception('calendar error:')
 
     if not disable_notify:
         try:
