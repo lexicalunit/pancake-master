@@ -17,6 +17,27 @@ var status_number = 0;
 var pancakes = [];
 var n_found_cinemas = 0;
 var n_built_cinemas = 0;
+var saved_market_data = null;
+var saved_cinema_data = {};
+var spiner_opts = {
+    lines: 13, // The number of lines to draw
+    length: 20, // The length of each line
+    width: 10, // The line thickness
+    radius: 30, // The radius of the inner circle
+    corners: 1, // Corner roundness (0..1)
+    rotate: 0, // The rotation offset
+    direction: 1, // 1: clockwise, -1: counterclockwise
+    color: '#000', // #rgb or #rrggbb or array of colors
+    speed: 1, // Rounds per second
+    trail: 60, // Afterglow percentage
+    shadow: false, // Whether to render a shadow
+    hwaccel: false, // Whether to use hardware acceleration
+    className: 'spinner', // The CSS class to assign to the spinner
+    zIndex: 2e9, // The z-index (defaults to 2000000000)
+    top: '50%', // Top position relative to parent
+    left: '50%' // Left position relative to parent
+};
+var spinner = new Spinner(spiner_opts);
 
 (window.onpopstate = function () {
     var match,
@@ -28,11 +49,28 @@ var n_built_cinemas = 0;
        params[decode(match[1])] = decode(match[2]);
 })();
 
-overrides = [];
-use_overrides = false;
-if("q" in params) {
-    overrides = params["q"].split(/[\s,]+/);
-    use_overrides = true;
+function init_query() {
+    overrides = [];
+    use_overrides = false;
+    if("q" in params) {
+        query = params["q"];
+        if(!$("#q").val()) {
+            $("#q").val(params["q"]);
+        }
+    }
+    overrides = $("#q").val().split(/[\s,]+/);
+    use_overrides = overrides.length && overrides[0].length;
+}
+
+function clear_data() {
+    init_query();
+    $("#main").empty();
+    $("#statuses").empty();
+    spinner.spin(document.getElementById('spin'));
+    pancakes = [];
+    n_found_cinemas = 0;
+    n_built_cinemas = 0;
+    status_number = 0;
 }
 
 function capwords(text) {
@@ -122,21 +160,30 @@ function parse_cinema(data) {
 function build_cinema(cinema) {
     var status_message = "Fetching " + cinema.CinemaName + " Data...";
     var status_id = status(status_message);
-    $.when($.ajax({
-        url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx"
-        , dataType: "jsonp"
-        , jsonp: "callback"
-        , data: {
-            cinemaid: pad(cinema.CinemaId, 4)
-        }
-        , success: parse_cinema
-    })).then(function(data, textStatus, jqXHR) {
+    var finish = function() {
         status_update(status_message + " done.", status_id);
         n_built_cinemas = n_built_cinemas + 1;
         if(n_built_cinemas == n_found_cinemas) {
             spinner.stop();
         }
-    });
+    }
+    if(!(cinema.CinemaName in saved_cinema_data)) {
+        $.when($.ajax({
+            url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx"
+            , dataType: "jsonp"
+            , jsonp: "callback"
+            , data: {
+                cinemaid: pad(cinema.CinemaId, 4)
+            }
+            , success: parse_cinema
+        })).then(function(data, textStatus, jqXHR) {
+            saved_cinema_data[cinema.CinemaName] = data;
+            finish();
+        });
+    } else {
+        parse_cinema(saved_cinema_data[cinema.CinemaName]);
+        finish();
+    }
 }
 
 function build_cinemas(cinemas) {
@@ -168,20 +215,30 @@ function parse_market(data) {
 }
 
 function build_market() {
+    clear_data();
     var status_message = "Fetching Market Data...";
     var status_id = status(status_message);
-    $.when($.ajax({
-        url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx"
-        , dataType: "jsonp"
-        , jsonp: "callback"
-        , data: {
-            date: daystr()
-            , marketid: pad(0, 4)
-        }
-        , success: parse_market
-    })).then(function(data, textStatus, jqXHR) {
+    var finish = function() {
         status_update(status_message + " done.", status_id);
-    });
+    }
+    if(saved_market_data == null) {
+        $.when($.ajax({
+            url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx"
+            , dataType: "jsonp"
+            , jsonp: "callback"
+            , data: {
+                date: daystr()
+                , marketid: pad(0, 4)
+            }
+            , success: parse_market
+        })).then(function(data, textStatus, jqXHR) {
+            saved_market_data = data;
+            finish();
+        });
+    } else {
+        parse_market(saved_market_data);
+        finish();
+    }
 }
 
 function by_location(pancakes) {
@@ -230,40 +287,19 @@ _.templateSettings.variable = "rc";
 <div class="status">
     <div class="tooltip">
         + status
-        <div class="tooltip_content"><ul id="statuses"><li class="status_header">Status Updates</li></ul></div>
+        <div class="tooltip_content"><span class="status_header">Status Updates</span><ul id="statuses"></ul></div>
     </div>
 </div>
 <div class="footer">
     <a href="https://github.com/lexicalunit/pancake-master">pancake-master on github.com</a><br />
 </div>
 <div class="search">
-    <form action="" method="get">
+    <form action="javascript:build_market()">
         <input type="text" id="q" name="q" />
         <button type="submit" value="search">Search</button>
     </form>
 </div>
 <script type="text/javascript">
-    $("#q").val(params["q"]);
-    var opts = {
-        lines: 13, // The number of lines to draw
-        length: 20, // The length of each line
-        width: 10, // The line thickness
-        radius: 30, // The radius of the inner circle
-        corners: 1, // Corner roundness (0..1)
-        rotate: 0, // The rotation offset
-        direction: 1, // 1: clockwise, -1: counterclockwise
-        color: '#000', // #rgb or #rrggbb or array of colors
-        speed: 1, // Rounds per second
-        trail: 60, // Afterglow percentage
-        shadow: false, // Whether to render a shadow
-        hwaccel: false, // Whether to use hardware acceleration
-        className: 'spinner', // The CSS class to assign to the spinner
-        zIndex: 2e9, // The z-index (defaults to 2000000000)
-        top: '50%', // Top position relative to parent
-        left: '50%' // Left position relative to parent
-    };
-    var target = document.getElementById('spin');
-    var spinner = new Spinner(opts).spin(target);
     build_market();
 </script>
 </body>
