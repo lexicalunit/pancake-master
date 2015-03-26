@@ -4,7 +4,7 @@
 
 .status {
     position: fixed;
-    top: 70px;
+    top: 80px;
     left: 15px;
 }
 
@@ -51,11 +51,11 @@ div.tooltip div:after {
     left: -48px;
 }
 
-div.tooltip div.tooltip_content {
+div.tooltip .tooltip_content {
     min-height: 80px;
 }
 
-div.tooltip li.status_header {
+div.tooltip .status_header {
     font-weight: bolder;
     border-bottom: 1px dotted white;
     margin-bottom: 1em;
