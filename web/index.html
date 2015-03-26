@@ -9,11 +9,14 @@
 <link rel="icon" type="image/png" href="resources/image/favicon.ico" />
 <script type="text/javascript" src="resources/js/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="resources/js/jquery.fittext.js"></script>
+<script type="text/javascript" src="resources/js/spin.min.js"></script>
 <script type="text/javascript" src="resources/js/underscore-min.js"></script>
 <script type="text/javascript">
 var params = {};
 var status_number = 0;
 var pancakes = [];
+var n_found_cinemas = 0;
+var n_built_cinemas = 0;
 
 (window.onpopstate = function () {
     var match,
@@ -119,7 +122,7 @@ function parse_cinema(data) {
 function build_cinema(cinema) {
     var status_message = "Fetching " + cinema.CinemaName + " Data...";
     var status_id = status(status_message);
-    $.ajax({
+    $.when($.ajax({
         url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx"
         , dataType: "jsonp"
         , jsonp: "callback"
@@ -127,8 +130,14 @@ function build_cinema(cinema) {
             cinemaid: pad(cinema.CinemaId, 4)
         }
         , success: parse_cinema
+    })).then(function(data, textStatus, jqXHR) {
+        status_update(status_message + " done.", status_id);
+        n_built_cinemas = n_built_cinemas + 1;
+        if(n_built_cinemas == n_found_cinemas) {
+            var target = document.getElementById('spin');
+            target.parentNode.removeChild(target);
+        }
     });
-    status_update(status_message + " done.", status_id);
 }
 
 function build_cinemas(cinemas) {
@@ -154,6 +163,7 @@ function parse_market(data) {
         };
         cinemas.push(item);
     }
+    n_found_cinemas = cinemas.length;
     status_update(status_message + " done.", status_id);
     build_cinemas(cinemas);
 }
@@ -161,7 +171,7 @@ function parse_market(data) {
 function build_market() {
     var status_message = "Fetching Market Data...";
     var status_id = status(status_message);
-    $.ajax({
+    $.when($.ajax({
         url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx"
         , dataType: "jsonp"
         , jsonp: "callback"
@@ -170,8 +180,9 @@ function build_market() {
             , marketid: pad(0, 4)
         }
         , success: parse_market
+    })).then(function(data, textStatus, jqXHR) {
+        status_update(status_message + " done.", status_id);
     });
-    status_update(status_message + " done.", status_id);
 }
 
 function by_location(pancakes) {
@@ -214,7 +225,8 @@ _.templateSettings.variable = "rc";
     <% }) %>
 </script>
 </head>
-<body onload="build_market();">
+<body>
+<div id="spin"></div>
 <div class="main" id="main"></div>
 <div class="status">
     <div class="tooltip">
@@ -233,6 +245,27 @@ _.templateSettings.variable = "rc";
 </div>
 <script type="text/javascript">
     $("#q").val(params["q"]);
+    var opts = {
+        lines: 13, // The number of lines to draw
+        length: 20, // The length of each line
+        width: 10, // The line thickness
+        radius: 30, // The radius of the inner circle
+        corners: 1, // Corner roundness (0..1)
+        rotate: 0, // The rotation offset
+        direction: 1, // 1: clockwise, -1: counterclockwise
+        color: '#000', // #rgb or #rrggbb or array of colors
+        speed: 1, // Rounds per second
+        trail: 60, // Afterglow percentage
+        shadow: false, // Whether to render a shadow
+        hwaccel: false, // Whether to use hardware acceleration
+        className: 'spinner', // The CSS class to assign to the spinner
+        zIndex: 2e9, // The z-index (defaults to 2000000000)
+        top: '50%', // Top position relative to parent
+        left: '50%' // Left position relative to parent
+    };
+    var target = document.getElementById('spin');
+    var spinner = new Spinner(opts).spin(target);
+    build_market();
 </script>
 </body>
 </html>
