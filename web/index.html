@@ -134,8 +134,7 @@ function build_cinema(cinema) {
         status_update(status_message + " done.", status_id);
         n_built_cinemas = n_built_cinemas + 1;
         if(n_built_cinemas == n_found_cinemas) {
-            var target = document.getElementById('spin');
-            target.parentNode.removeChild(target);
+            spinner.stop();
         }
     });
 }
