@@ -9,7 +9,7 @@ html {
 }
 
 body {
-    background-color: #F2F2F2;
+    background-color: #000;
     font-family: sans-serif;
 }
 
@@ -21,11 +21,24 @@ a {
     text-decoration: none;
 }
 
+/* films */
+
+h1 a:hover, h2 a:hover {
+    color: #E9E5C8;
+    text-decoration: none;
+}
+
 .main {
     width: 80%;
     padding: 0;
-    margin: 6em auto 0 auto;
+    margin: 0 auto 3em auto;
     border: 0;
+}
+
+@media screen and (min-width:800px) {
+    .main {
+        margin-top: 6em;
+    }
 }
 
 .film_heading {
@@ -101,57 +114,84 @@ a {
     text-decoration: line-through;
 }
 
-.footer {
-    width: 80%;
-    margin: 0 auto 0 auto;
-    padding: 0;
-    border-top: 2em solid #F2F2F2;
-    border-right: 0;
-    border-bottom: 2em solid #F2F2F2;
-    border-left: 0;
-    text-align: center;
-    line-height: 150%;
-}
-
-.footer a {
-    color: blue;
-}
-
-.footer a:hover {
-    color: #8DE1FF;
-}
-
 li a:hover {
     color: #8DE1FF;
+    text-decoration: none;
 }
 
-.search {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    padding: 5px 8px 5px 8px;
-    background-color: rgb(163, 30, 33);
+/* search */
+
+@media screen and (min-width:800px) {
+    .search {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+    }
+}
+
+.search input {
+    background-color: #440e10;
+    border: 3px solid rgb(226, 193, 98);
+}
+
+.search input.form-control::-webkit-input-placeholder { color: white; }
+.search input.form-control:-moz-placeholder { color: white; }
+.search input.form-control::-moz-placeholder { color: white; }
+.search input.form-control:-ms-input-placeholder { color: white; }
+
+.search input:focus {
+    background-color: white;
+    color: black;
+}
+
+/* forkongithub */
+
+.forkongithub a {
+    display: block;
+    width: 96%;
+    margin: 10px auto;
+    background-color: #440e10;
+    color: #E9E5C8;
+    text-decoration: none;
+    text-align: center;
+    font-weight: bold;
+    padding: 8px;
+    font-size: 1em;
+    line-height: 2rem;
+    position: relative;
+    transition: 0.5s;
     border: 3px solid rgb(226, 193, 98);
     border-radius: 5px;
 }
 
-.search input, .search button {
-    font-size: 125%;
-    padding: 3px;
-    border: 0;
-    border-radius: 5px;
+.forkongithub a:hover {
+    background-color: #A31E21;
+    color: #E9E5C8;
 }
 
-.search input {
-    width: 20em;
-}
+@media screen and (min-width:800px) {
+    .forkongithub {
+        position: absolute;
+        display: block;
+        top: 0;
+        right: 0;
+        width: 200px;
+        overflow: hidden;
+        height: 200px;
+        z-index: 9999;
+    }
 
-.search button {
-    margin-left: 5px;
-    background-color: #F5F5F5;
-}
-
-.search button:hover {
-    margin-left: 5px;
-    background-color: #D5D5D5;
+    .forkongithub a {
+        margin: 0;
+        width: 200px;
+        position: absolute;
+        top: 30px;
+        right: -50px;
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        -moz-transform: rotate(45deg);
+        -o-transform: rotate(45deg);
+        transform: rotate(45deg);
+        box-shadow: 4px 4px 10px rgba(0,0,0,0.8);
+    }
 }
