@@ -19,6 +19,16 @@
 <link rel="icon" type="image/png" href="resources/image/favicon.ico" />
 </head>
 <body>
+
+<div id="spin"></div>
+
+<div class="status">
+    <div class="status_items">
+        + status
+        <div class="tooltip_content"><span class="status_header">Status Updates</span><ul id="statuses"><li class="status_item" id="status_1">Fetching Market Data... done.</li><li class="status_item" id="status_2">Parsing Market Data... done.</li><li class="status_item" id="status_3">Parsing Cinemas Data... done.</li><li class="status_item" id="status_4">Fetching Alamo Drafthouse Ritz Data... done.</li><li class="status_item" id="status_5">Fetching Alamo Drafthouse Lakeline Data... done.</li><li class="status_item" id="status_6">Fetching Alamo Drafthouse Village Data... done.</li><li class="status_item" id="status_7">Fetching Slaughter Lane Data... done.</li><li class="status_item" id="status_8">Fetching South Lamar Data... done.</li><li class="status_item" id="status_9">Parsing Alamo Drafthouse Ritz Data... done.</li><li class="status_item" id="status_10">Parsing Alamo Drafthouse Lakeline Data... done.</li><li class="status_item" id="status_11">Parsing Alamo Drafthouse Village Data... done.</li><li class="status_item" id="status_12">Parsing South Lamar Data... done.</li><li class="status_item" id="status_13">Parsing Slaughter Lane Data... done.</li></ul></div>
+    </div>
+</div>
+
 <div class="container search">
     <form action="javascript:build_market()" class="form-inline">
     <div class="form-group">
@@ -27,15 +37,13 @@
     </div>
     </form>
 </div>
+
 <div class="main" id="main"></div>
-<div class="status">
-    <div class="status_items">
-        + status
-        <div class="tooltip_content"><span class="status_header">Status Updates</span><ul id="statuses"></ul></div>
-    </div>
+
+<div class="forkongithub">
+    <a href="https://github.com/lexicalunit/pancake-master">Fork me on GitHub</a>
 </div>
-<div class="forkongithub"><a href="https://github.com/lexicalunit/pancake-master">Fork me on GitHub</a></div>
-<div id="spin"></div>
+
 <script type="text/javascript" src="resources/js/jquery.min.js"></script>
 <script type="text/javascript" src="resources/js/bootstrap-min.js"></script>
 <script type="text/javascript" src="resources/js/jquery.fittext.js"></script>
@@ -44,6 +52,7 @@
 <script type="text/javascript" src="resources/js/pancake.js"></script>
 <script type="text/template" class="template">
     <% _.each(by_location(rc), function(pancakes, location) { %>
+    <div class="data">
         <h1 class="film_heading"><a href="https://drafthouse.com/uid/<%= pancakes[0].film_uid %>"><%- pancakes[0].film %></a></h1>
         <h2 class="cinema_heading"><a href="<%= pancakes[0].cinema_url %>"><%- pancakes[0].cinema %></a></h2>
         <ul class="pancake_items">
@@ -51,10 +60,13 @@
                 <li class="pancake_item"><%- date %> - <%= pancake_times(pancakes).join(', ') %></li>
             <% }); %>
         </ul>
+    </div>
     <% }) %>
 </script>
+
 <script type="text/javascript">
     build_market();
 </script>
+
 </body>
 </html>

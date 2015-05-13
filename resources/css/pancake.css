@@ -13,6 +13,10 @@ body {
     font-family: sans-serif;
 }
 
+html, body {
+    height: 100%;
+}
+
 a {
     margin: 0;
     padding: 0;
@@ -23,22 +27,14 @@ a {
 
 /* films */
 
+.data {
+    width: 80%;
+    margin: 0 auto 0 auto;
+}
+
 h1 a:hover, h2 a:hover {
     color: #E9E5C8;
     text-decoration: none;
-}
-
-.main {
-    width: 80%;
-    padding: 0;
-    margin: 0 auto 3em auto;
-    border: 0;
-}
-
-@media screen and (min-width:800px) {
-    .main {
-        margin-top: 6em;
-    }
 }
 
 .film_heading {
@@ -121,12 +117,8 @@ li a:hover {
 
 /* search */
 
-@media screen and (min-width:800px) {
-    .search {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-    }
+.search {
+    margin-top: 1em;
 }
 
 .search input {
@@ -144,33 +136,48 @@ li a:hover {
     color: black;
 }
 
+@media screen and (min-width:800px) {
+    .search {
+        position: absolute;
+        margin: 0;
+        top: 10px;
+        left: 10px;
+    }
+}
+
 /* forkongithub */
 
+.main {
+    margin-bottom: -40px; /* negative margin to accommodate footer. */
+}
+
 .forkongithub a {
-    display: block;
-    width: 96%;
-    margin: 10px auto;
+    height: 40px;
     background-color: #440e10;
+    display: block;
+    margin-top: 80px;
     color: #E9E5C8;
     text-decoration: none;
     text-align: center;
     font-weight: bold;
-    padding: 8px;
+    padding-top: 5px;
     font-size: 1em;
     line-height: 2rem;
     position: relative;
+    border-top: 3px solid rgb(226, 193, 98);
     transition: 0.5s;
-    border: 3px solid rgb(226, 193, 98);
-    border-radius: 5px;
 }
 
 .forkongithub a:hover {
     background-color: #A31E21;
-    color: #E9E5C8;
 }
 
 @media screen and (min-width:800px) {
     .forkongithub {
+        background-color: transparent;
+        color: #E9E5C8;
+        padding: 0;
+        border: 0;
         position: absolute;
         display: block;
         top: 0;
@@ -182,16 +189,43 @@ li a:hover {
     }
 
     .forkongithub a {
+        display: block;
+        background-color: #440e10;
+        color: #E9E5C8;
+        text-decoration: none;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1em;
+        line-height: 1.5em;
         margin: 0;
         width: 200px;
         position: absolute;
-        top: 30px;
-        right: -50px;
+        top: 35px;
+        right: -45px;
         -webkit-transform: rotate(45deg);
         -ms-transform: rotate(45deg);
         -moz-transform: rotate(45deg);
         -o-transform: rotate(45deg);
         transform: rotate(45deg);
         box-shadow: 4px 4px 10px rgba(0,0,0,0.8);
+        border: 3px solid rgb(226, 193, 98);
+    }
+}
+
+/* main */
+
+.main {
+    border: 0;
+    min-height: 100%;
+    height: auto !important;
+    height: 100%;
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media screen and (min-width:800px) {
+    .main {
+        margin-top: 6em;
     }
 }
