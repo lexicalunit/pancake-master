@@ -119,7 +119,7 @@ function parse_cinema(data) {
         var date_data = data.Cinema.Dates[i];
         for(var j = 0; j < date_data.Films.length; j++) {
             var film_data = date_data.Films[j];
-            var is_pancake = (film_data.Film.match(/pancake/i) && film_data.Film.match(/master/i));
+            var is_pancake = (film_data.Film.match(/pancake/i));
             var is_override = matches_override(film_data.Film);
             if((!use_overrides && !is_pancake) || (use_overrides && !is_override)) {
                 continue; // DO NOT WANT!
@@ -188,6 +188,9 @@ function parse_market(data) {
     var cinemas = [];
     for(var i = 0; i < data.Market.Cinemas.length; i++) {
         var cinema = data.Market.Cinemas[i];
+        if(cinema.CinemaId == '0090') {
+            continue;
+        }
         var item = {
             CinemaId: cinema.CinemaId
             , CinemaName: cinema.CinemaName
