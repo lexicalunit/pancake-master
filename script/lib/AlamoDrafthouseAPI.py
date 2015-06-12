@@ -2,10 +2,10 @@
 
 import json
 import logging
-import requests
 import string
-
 from datetime import datetime
+
+import requests
 
 ALAMO_DATETIME_FORMAT = '%A, %B %d, %Y - %I:%M%p'
 
@@ -57,7 +57,7 @@ def query(url, **kwargs):
 
         if is_jsonp:
             jsonp = resp.text
-            data = json.loads(jsonp[jsonp.index("(") + 1: jsonp.rindex(")")])
+            data = json.loads(jsonp[jsonp.index("(") + 1:jsonp.rindex(")")])
         else:
             data = resp.json()
     except Exception as e:
@@ -72,10 +72,7 @@ def query(url, **kwargs):
 
 def query_cinemas(market_id):
     """Queries the Alamo Drafthouse API for the list of cinemas in a given market."""
-    data = query(
-        MARKET_SESSIONS_URL,
-        date=datetime.strftime(datetime.now(), '%Y%m%d'),
-        marketid=format_uid(market_id))
+    data = query(MARKET_SESSIONS_URL, date=datetime.strftime(datetime.now(), '%Y%m%d'), marketid=format_uid(market_id))
     log.debug('market response:\n{}'.format(format_json(data)))
 
     cinemas = []
@@ -83,11 +80,7 @@ def query_cinemas(market_id):
         for cinema in data['Market']['Cinemas']:
             log.debug(cinema['CinemaName'])
             url = cinema.get('CinemaURL', None)  # Rolling Roadshow has no URL
-            cinemas.append((
-                int(cinema['CinemaId']),
-                str(cinema['CinemaName']),
-                str(url) if url else None
-            ))
+            cinemas.append((int(cinema['CinemaId']), str(cinema['CinemaName']), str(url) if url else None))
     return cinemas
 
 
@@ -95,10 +88,9 @@ def query_pancakes(market_id, market_timezone, overrides):
     """Queries the Alamo Drafthouse API for the list of pancakes in a given market."""
     pancakes = []
     for cinema_id, cinema, cinema_url in query_cinemas(market_id):
-        data = query(
-            CINEMA_SESSIONS_URL,
-            cinemaid=format_uid(cinema_id),
-            callback='whatever')  # sadly, this resource *requires* JSONP callback parameter
+        data = query(CINEMA_SESSIONS_URL,
+                     cinemaid=format_uid(cinema_id),
+                     callback='whatever')  # sadly, this resource *requires* JSONP callback parameter
         log.debug('cinema response:\n{}'.format(format_json(data)))
 
         if 'Cinema' not in data:
@@ -110,15 +102,12 @@ def query_pancakes(market_id, market_timezone, overrides):
                 film_uid = str(film_data['FilmId'])
 
                 if not any(s.lower() in film.lower() for s in overrides):
-                    if not all(s in film.lower() for s in ['pancake', 'master']):
+                    if not all(s in film.lower() for s in ['pancake']):
                         continue  # DO NOT WANT!
 
                 for session_data in film_data['Sessions']:
                     status = str(session_data['SessionStatus'])
-                    showtime = parse_datetime(
-                        date_data['Date'],
-                        session_data['SessionTime'],
-                        market_timezone)
+                    showtime = parse_datetime(date_data['Date'], session_data['SessionTime'], market_timezone)
                     pancake = {
                         'film': string.capwords(film.replace('Master Pancake: ', '').lower()),
                         'film_uid': film_uid,
