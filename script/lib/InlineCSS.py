@@ -89,6 +89,9 @@ def styled(html, style):
 
     selectors = {}
     for key in style.keys():
+        print key
+        print _split_key(key)
+        print 
         selector, pseudoclass = _split_key(key)
         if selector not in selectors:
             selectors[selector] = []

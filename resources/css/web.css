@@ -1,0 +1,96 @@
+/* search */
+
+.search {
+    margin-top: 1em;
+}
+
+.search input {
+    background-color: #440e10;
+    border: 3px solid rgb(226, 193, 98);
+}
+
+.search input.form-control::-webkit-input-placeholder { color: white; }
+.search input.form-control:-moz-placeholder { color: white; }
+.search input.form-control::-moz-placeholder { color: white; }
+.search input.form-control:-ms-input-placeholder { color: white; }
+
+.search input:focus {
+    background-color: white;
+    color: black;
+}
+
+@media screen and (min-width:800px) {
+    .search {
+        position: absolute;
+        margin: 0;
+        top: 10px;
+        left: 10px;
+    }
+}
+
+/* forkongithub */
+
+.main {
+    margin-bottom: -40px; /* negative margin to accommodate footer. */
+}
+
+.forkongithub a {
+    height: 40px;
+    background-color: #440e10;
+    display: block;
+    margin-top: 80px;
+    color: #E9E5C8;
+    text-decoration: none;
+    text-align: center;
+    font-weight: bold;
+    padding-top: 5px;
+    font-size: 1em;
+    line-height: 2rem;
+    position: relative;
+    border-top: 3px solid rgb(226, 193, 98);
+    transition: 0.5s;
+}
+
+.forkongithub a:hover {
+    background-color: #A31E21;
+}
+
+@media screen and (min-width:800px) {
+    .forkongithub {
+        background-color: transparent;
+        color: #E9E5C8;
+        padding: 0;
+        border: 0;
+        position: absolute;
+        display: block;
+        top: 0;
+        right: 0;
+        width: 200px;
+        overflow: hidden;
+        height: 200px;
+        z-index: 9999;
+    }
+
+    .forkongithub a {
+        display: block;
+        background-color: #440e10;
+        color: #E9E5C8;
+        text-decoration: none;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1em;
+        line-height: 1.5em;
+        margin: 0;
+        width: 200px;
+        position: absolute;
+        top: 35px;
+        right: -45px;
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        -moz-transform: rotate(45deg);
+        -o-transform: rotate(45deg);
+        transform: rotate(45deg);
+        box-shadow: 4px 4px 10px rgba(0,0,0,0.8);
+        border: 3px solid rgb(226, 193, 98);
+    }
+}
