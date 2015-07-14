@@ -67,7 +67,7 @@ h2 a:hover {
     border-left: 8px solid #E2C162;
 }
 
-.pancake_item {
+.film_item {
     margin: 0 3% 0 3%;
     padding: 0 3% 0 3%;
     border: 0;
@@ -75,7 +75,7 @@ h2 a:hover {
     line-height: 150%;
 }
 
-.pancake_items {
+.film_items {
     background-color: #A31E21;
     margin: 0;
     padding: 2%;
@@ -89,20 +89,20 @@ h2 a:hover {
     list-style: none;
 }
 
-.pancake_item:nth-child(odd) {
+.film_item:nth-child(odd) {
     background-color: #FFFFFF;
 }
 
-.pancake_item:nth-child(even) {
+.film_item:nth-child(even) {
     background-color: #F5F5F5;
 }
 
-.pancake_item:first-child {
+.film_item:first-child {
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
 }
 
-.pancake_item:last-child {
+.film_item:last-child {
     border-bottom-left-radius: 15px;
     border-bottom-right-radius: 15px;
 }

@@ -1,10 +1,12 @@
-var params = {};
-var status_number = 0;
-var pancakes = [];
+var api_base = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/";
+var films = [];
+var matching_films = [];
 var n_found_cinemas = 0;
-var n_built_cinemas = 0;
-var saved_market_data = null;
-var saved_cinema_data = {};
+var n_parsed_cinemas = 0;
+var search_terms = [];
+var status_number = 0;
+
+// Spinner to indicate Alamo Drafthouse data is being fetched/processed.
 var spiner_opts = {
     lines: 13, // The number of lines to draw
     length: 20, // The length of each line
@@ -23,8 +25,10 @@ var spiner_opts = {
     top: '50%', // Top position relative to parent
     left: '50%' // Left position relative to parent
 };
-var spinner = new Spinner(spiner_opts);
+var spinner = new Spinner(window.spiner_opts);
 
+// Parse any query parameters.
+var params = {};
 (window.onpopstate = function () {
     var match,
         pl     = /\+/g,  // Regex for replacing addition symbol with a space
@@ -32,31 +36,23 @@ var spinner = new Spinner(spiner_opts);
         decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
         query  = window.location.search.substring(1);
     while (match = search.exec(query))
-       params[decode(match[1])] = decode(match[2]);
+        window.params[decode(match[1])] = decode(match[2]);
 })();
 
+// Default to searching for Master Pancake shows, then consider query parameter
+// if it has been provided, and finally override with any search input.
 function init_query() {
-    overrides = [];
-    use_overrides = false;
-    if("q" in params) {
-        query = params["q"];
+    window.search_terms = ["pancake"];
+    if("q" in window.params) {
+        query = window.params["q"];
         if(!$("#q").val()) {
-            $("#q").val(params["q"]);
+            $("#q").val(window.params["q"]);
         }
     }
-    overrides = $("#q").val().split(/[\s,]+/);
-    use_overrides = overrides.length && overrides[0].length;
-}
-
-function clear_data() {
-    init_query();
-    $("#main").empty();
-    $("#statuses").empty();
-    spinner.spin(document.getElementById('spin'));
-    pancakes = [];
-    n_found_cinemas = 0;
-    n_built_cinemas = 0;
-    status_number = 0;
+    var terms = $("#q").val().split(/[\s,]+/);
+    if(terms.length && terms[0].length) {
+        window.search_terms = terms;
+    }
 }
 
 function capwords(text) {
@@ -94,22 +90,34 @@ function status_update(text, number) {
     $("#status_" + number).html(text);
 }
 
-function show_pancake(pancake) {
-    window.pancakes.push(pancake);
-    var template = _.template($("script.template").html());
-    $("#main").html(template(window.pancakes));
-    $("h1").fitText(1.5);
-    $("h2").fitText(3)
+function search() {
+    $("#main").empty();
+    init_query();
+    window.matching_films = [];
+    for(var i =0; i < window.films.length; i++) {
+        var film = window.films[i];
+        if(matches_search(film.title)) {
+            window.matching_films.push(film);
+        }
+    }
+    build_films();
 }
 
-function matches_override(title) {
-    for(var o = 0; o < overrides.length; o++) {
-        var re = new RegExp(overrides[o], 'i');
+function matches_search(title) {
+    for(var i = 0; i < window.search_terms.length; i++) {
+        var re = new RegExp(window.search_terms[i], 'i');
         if(title.match(re)) {
             return true;
         }
     }
     return false;
+}
+
+function build_films() {
+    var template = _.template($("script.template").html());
+    $("#main").html(template(window.matching_films));
+    $("h1").fitText(1.5);
+    $("h2").fitText(3);
 }
 
 function parse_cinema(data) {
@@ -119,15 +127,11 @@ function parse_cinema(data) {
         var date_data = data.Cinema.Dates[i];
         for(var j = 0; j < date_data.Films.length; j++) {
             var film_data = date_data.Films[j];
-            var is_pancake = (film_data.Film.match(/pancake/i));
-            var is_override = matches_override(film_data.Film);
-            if((!use_overrides && !is_pancake) || (use_overrides && !is_override)) {
-                continue; // DO NOT WANT!
-            }
             for(var k = 0; k < film_data.Sessions.length; k++) {
                 var session_data = film_data.Sessions[k];
-                pancake = {
-                    film: capwords(film_data.Film.replace("Master Pancake: ", "").toLowerCase())
+                film = {
+                    // film: capwords(film_data.Film.replace("Master Pancake: ", "").toLowerCase())
+                    title: capwords(film_data.Film.toLowerCase())
                     , film_uid: film_data.FilmId
                     , cinema: data.Cinema.CinemaName
                     , cinema_url: data.Cinema.CinemaURL
@@ -136,7 +140,7 @@ function parse_cinema(data) {
                     , status: session_data.SessionStatus
                     , url: session_data.SessionStatus == "onsale" ? session_data.SessionSalesURL : null
                 };
-                show_pancake(pancake);
+                window.films.push(film);
             }
         }
     }
@@ -146,30 +150,22 @@ function parse_cinema(data) {
 function build_cinema(cinema) {
     var status_message = "Fetching " + cinema.CinemaName + " Data...";
     var status_id = status(status_message);
-    var finish = function() {
-        status_update(status_message + " done.", status_id);
-        n_built_cinemas = n_built_cinemas + 1;
-        if(n_built_cinemas == n_found_cinemas) {
-            spinner.stop();
+    $.when($.ajax({
+        url: window.api_base + "CinemaSessions.aspx"
+        , dataType: "jsonp"
+        , jsonp: "callback"
+        , data: {
+            cinemaid: pad(cinema.CinemaId, 4)
         }
-    }
-    if(!(cinema.CinemaName in saved_cinema_data)) {
-        $.when($.ajax({
-            url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx"
-            , dataType: "jsonp"
-            , jsonp: "callback"
-            , data: {
-                cinemaid: pad(cinema.CinemaId, 4)
-            }
-            , success: parse_cinema
-        })).then(function(data, textStatus, jqXHR) {
-            saved_cinema_data[cinema.CinemaName] = data;
-            finish();
-        });
-    } else {
-        parse_cinema(saved_cinema_data[cinema.CinemaName]);
-        finish();
-    }
+        , success: parse_cinema
+    })).then(function(data, textStatus, jqXHR) {
+        status_update(status_message + " done.", status_id);
+        window.n_parsed_cinemas++;
+        if(window.n_parsed_cinemas == window.n_found_cinemas) {
+            window.spinner.stop();
+            search();
+        }
+    });
 }
 
 function build_cinemas(cinemas) {
@@ -198,61 +194,57 @@ function parse_market(data) {
         };
         cinemas.push(item);
     }
-    n_found_cinemas = cinemas.length;
+    window.n_found_cinemas = cinemas.length;
     status_update(status_message + " done.", status_id);
     build_cinemas(cinemas);
 }
 
 function build_market() {
-    clear_data();
+    $("#main").empty();
+    $("#statuses").empty();
+    init_query();
+    window.spinner.spin(document.getElementById('spin'));
+    window.status_number = 0;
+
     var status_message = "Fetching Market Data...";
     var status_id = status(status_message);
-    var finish = function() {
+    $.when($.ajax({
+        url: window.api_base + "marketsessions.aspx"
+        , dataType: "jsonp"
+        , jsonp: "callback"
+        , data: {
+            date: daystr()
+            , marketid: pad(0, 4)
+        }
+        , success: parse_market
+    })).then(function(data, textStatus, jqXHR) {
         status_update(status_message + " done.", status_id);
-    }
-    if(saved_market_data == null) {
-        $.when($.ajax({
-            url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx"
-            , dataType: "jsonp"
-            , jsonp: "callback"
-            , data: {
-                date: daystr()
-                , marketid: pad(0, 4)
-            }
-            , success: parse_market
-        })).then(function(data, textStatus, jqXHR) {
-            saved_market_data = data;
-            finish();
-        });
-    } else {
-        parse_market(saved_market_data);
-        finish();
-    }
-}
-
-function by_location(pancakes) {
-    return _.groupBy(pancakes, function(pancake) {
-        return [pancake.film, pancake.cinema];
     });
 }
 
-function pancake_time(pancake) {
+function by_location(films) {
+    return _.groupBy(films, function(film) {
+        return [film.title, film.cinema];
+    });
+}
+
+function film_time(film) {
     var span = document.createElement('span');
-    span.className = pancake.status;
-    if(pancake.status == "onsale") {
+    span.className = film.status;
+    if(film.status == "onsale") {
         var a = document.createElement('a');
-        a.href = pancake.url;
-        a.innerHTML = pancake.time;
+        a.href = film.url;
+        a.innerHTML = film.time;
         span.innerHTML = a.outerHTML;
     } else {
-        span.innerHTML = pancake.time;
+        span.innerHTML = film.time;
     }
     return span.outerHTML;
 }
 
-function pancake_times(pancakes) {
-    return pancakes.map(function(pancake) {
-        return pancake_time(pancake);
+function film_times(films) {
+    return films.map(function(film) {
+        return film_time(film);
     });
 }
 
