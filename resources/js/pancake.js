@@ -1,10 +1,9 @@
 var api_base = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/";
-var films = [];
-var matching_films = [];
 var n_found_cinemas = 0;
 var n_parsed_cinemas = 0;
 var search_terms = [];
 var status_number = 0;
+var storage = $.initNamespaceStorage("pancake").sessionStorage;
 
 // Spinner to indicate Alamo Drafthouse data is being fetched/processed.
 var spiner_opts = {
@@ -93,14 +92,15 @@ function status_update(text, number) {
 function search() {
     $("#main").empty();
     init_query();
-    window.matching_films = [];
-    for(var i =0; i < window.films.length; i++) {
-        var film = window.films[i];
+    var films = window.storage.isSet("films") ? window.storage.get("films") : [];
+    var matching_films = [];
+    for(var i = 0; i < films.length; i++) {
+        var film = films[i];
         if(matches_search(film.title)) {
-            window.matching_films.push(film);
+            matching_films.push(film);
         }
     }
-    build_films();
+    build_films(matching_films);
 }
 
 function matches_search(title) {
@@ -113,9 +113,9 @@ function matches_search(title) {
     return false;
 }
 
-function build_films() {
+function build_films(films) {
     var template = _.template($("script.template").html());
-    $("#main").html(template(window.matching_films));
+    $("#main").html(template(films));
     $("h1").fitText(1.5);
     $("h2").fitText(3);
 }
@@ -123,6 +123,7 @@ function build_films() {
 function parse_cinema(data) {
     var status_message = "Parsing " + data.Cinema.CinemaName + " Data...";
     var status_id = status(status_message);
+    var films = window.storage.isSet("films") ? window.storage.get("films") : [];
     for(var i = 0; i < data.Cinema.Dates.length; i++) {
         var date_data = data.Cinema.Dates[i];
         for(var j = 0; j < date_data.Films.length; j++) {
@@ -130,7 +131,6 @@ function parse_cinema(data) {
             for(var k = 0; k < film_data.Sessions.length; k++) {
                 var session_data = film_data.Sessions[k];
                 film = {
-                    // film: capwords(film_data.Film.replace("Master Pancake: ", "").toLowerCase())
                     title: capwords(film_data.Film.toLowerCase())
                     , film_uid: film_data.FilmId
                     , cinema: data.Cinema.CinemaName
@@ -140,10 +140,11 @@ function parse_cinema(data) {
                     , status: session_data.SessionStatus
                     , url: session_data.SessionStatus == "onsale" ? session_data.SessionSalesURL : null
                 };
-                window.films.push(film);
+                films.push(film);
             }
         }
     }
+    window.storage.set("films", films);
     status_update(status_message + " done.", status_id);
 }
 
@@ -199,13 +200,29 @@ function parse_market(data) {
     build_cinemas(cinemas);
 }
 
-function build_market() {
+function initialize_page() {
     $("#main").empty();
     $("#statuses").empty();
     init_query();
     window.spinner.spin(document.getElementById('spin'));
     window.status_number = 0;
+}
 
+function initialize_storage() {
+    if(window.storage.isSet("films")) return false;
+    window.storage.set("films", []);
+    return true;
+}
+
+function build_market() {
+    initialize_page();
+    var did_initialize_storage = initialize_storage();
+    if(!did_initialize_storage) {
+        status("Data fetched from session storage.");
+        window.spinner.stop();
+        search();
+        return;
+    }
     var status_message = "Fetching Market Data...";
     var status_id = status(status_message);
     $.when($.ajax({
