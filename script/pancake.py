@@ -30,7 +30,7 @@ def setup_logging(level):
 
 
 if __name__ == '__main__':
-    log = setup_logging(logging.DEBUG)
+    log = setup_logging(logging.INFO)
 
     # yapf: disable
     usage_help = 'Pancake Master searches for new or on sale Master Pancake shows.'
