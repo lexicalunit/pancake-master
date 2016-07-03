@@ -1,6 +1,5 @@
 # License: none (public domain)
 
-import AlamoDrafthouseAPI as api
 import errno
 import gzip
 import hashlib
@@ -8,14 +7,16 @@ import logging
 import os
 import pickle
 import smtplib
-import tinycss
-
-from bs4 import BeautifulSoup
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from itertools import groupby, count
-from InlineCSS import styled
+from itertools import count, groupby
+
+import tinycss
+from bs4 import BeautifulSoup
+
+from lib import AlamoDrafthouseAPI as api
+from lib.InlineCSS import styled
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ def datetime_string(dt):
 
 def pancake_sort_key(pancake):
     """Key to sort pancakes by film title, cinema location, and datetime of the show."""
-    return pancake['film'], pancake['cinema'], pancake['datetime']
+    return pancake.film_name, pancake.cinema.cinema_name, pancake.film_datetime
 
 
 def html_showtimes(pancakes):
@@ -57,14 +58,14 @@ def html_showtimes(pancakes):
     showtimes = []
     for pancake in pancakes:
         soup = BeautifulSoup('<span></span>')
-        soup.span['class'] = pancake['status']
+        soup.span['class'] = pancake.film_status
 
-        if pancake['status'] == 'onsale':
-            anchor = soup.new_tag('a', href=pancake['url'])
-            anchor.append(time_string(pancake['datetime']))
+        if pancake.film_status == 'onsale':
+            anchor = soup.new_tag('a', href=pancake.film_url)
+            anchor.append(time_string(pancake.film_datetime))
             soup.span.append(anchor)
-        else:  # pancake['status'] == 'soldout' or pancake['status'] == 'notonsale'
-            soup.span.append(time_string(pancake['datetime']))
+        else:  # pancake.film_status == 'soldout' or pancake.film_status == 'notonsale'
+            soup.span.append(time_string(pancake.film_datetime))
 
         showtimes.append(str(soup))
     return showtimes
@@ -75,16 +76,16 @@ def html_digest(pancakes):
     pancakes = sorted(pancakes, key=pancake_sort_key)
 
     # things to group by
-    by_film_and_cinema = lambda p: (p['film_uid'], p['film'], p['cinema_url'], p['cinema'])
-    by_day = lambda p: p['datetime'].date()
+    by_film_and_cinema = lambda p: (p.film_id, p.film_name, p.cinema.cinema_url, p.cinema.cinema_name)
+    by_day = lambda p: p.film_datetime.date()
 
     soup = BeautifulSoup('')
     for key, pancakes in groupby(pancakes, key=by_film_and_cinema):
-        film_uid, film, cinema_url, cinema = key
+        film_id, film, cinema_url, cinema = key
 
         film_heading = BeautifulSoup('<h1><a></a></h1>')
         film_heading.h1['class'] = 'film_heading'
-        film_heading.a['href'] = 'https://drafthouse.com/uid/' + film_uid
+        film_heading.a['href'] = 'https://drafthouse.com/uid/' + film_id
         film_heading.a.append(film)
 
         if cinema_url:
@@ -102,12 +103,12 @@ def html_digest(pancakes):
             item_data.append((date_string(day), ', '.join(html_showtimes(pancakes))))
 
         item_list = BeautifulSoup('<ul></ul>')
-        item_list.ul['class'] = 'pancake_items'
+        item_list.ul['class'] = 'film_items'
         for data, n in zip(item_data, count(1)):
             day, showtimes = data
 
             item = item_list.new_tag('li')
-            item['class'] = 'pancake_item'
+            item['class'] = 'film_item'
 
             item_content = '<span>{day} - {showtimes}</span>'.format(day=day, showtimes=showtimes)
             item.append(BeautifulSoup(item_content))
@@ -125,8 +126,10 @@ def html_digest(pancakes):
         stylesheet = parser.parse_stylesheet_file(STYLE_FILE)
         style = {
             r.selector.as_css(): {
-                d.name: d.value.as_css() for d in r.declarations
-            } for r in stylesheet.rules
+                d.name: d.value.as_css()
+                for d in r.declarations
+            }
+            for r in stylesheet.rules
         }
     except Exception as e:
         log.warn('could not load CSS style file: {}'.format(e))
@@ -145,22 +148,20 @@ def text_digest(pancakes):
     """Returns a plain text digest of the given pancakes."""
     text = ''
     for pancake in sorted(pancakes, key=pancake_sort_key):
-        if pancake['status'] == 'onsale':
+        if pancake.film_status == 'onsale':
             status = 'On sale now!'
-        elif pancake['status'] == 'soldout':
+        elif pancake.film_status == 'soldout':
             status = 'Sold out.'
-        else:  # pancake['status'] == 'notonsale'
+        else:  # pancake.film_status == 'notonsale'
             status = 'Not on sale yet.'
-        params = (
-            pancake['film'].encode('utf-8'),
-            pancake['cinema'],
-            date_string(pancake['datetime']),
-            time_string(pancake['datetime']),
-            status,
-        )
+        params = (pancake.film_name.encode('utf-8'),
+                  pancake.cinema.cinema_name,
+                  date_string(pancake.film_datetime),
+                  time_string(pancake.film_datetime),
+                  status, )
         text += '{}\n{}\n{}\n{}\n{}'.format(*params)
-        if pancake['status'] == 'onsale':
-            text += '\n{}'.format(pancake['url'])
+        if pancake.film_status == 'onsale':
+            text += '\n{}'.format(pancake.film_url)
         text += '\n\n'
     return text
 
@@ -196,9 +197,9 @@ def notify(pancakes, recipients):
 def pancake_key(pancake):
     """Creates a unique id for a given pancake."""
     m = hashlib.md5()
-    m.update(pancake['film'])
-    m.update(pancake['cinema'])
-    m.update(datetime_string(pancake['datetime']))
+    m.update(pancake.film_name)
+    m.update(pancake.cinema.cinema_name)
+    m.update(datetime_string(pancake.film_datetime))
     return m.hexdigest()
 
 
@@ -241,7 +242,7 @@ def update_pancakes(db, pancakes):
         key = pancake_key(pancake)
 
         if key in db:
-            if db[key]['status'] == 'notonsale' and pancake['status'] == 'onsale':
+            if db[key].film_status == 'notonsale' and pancake.film_status == 'onsale':
                 updated.append(pancake)
         else:
             updated.append(pancake)
@@ -253,7 +254,7 @@ def update_pancakes(db, pancakes):
 def prune_database(db):
     """Removes old pancakes from the database."""
     for key, pancake in db.items():
-        if pancake['datetime'].date() < datetime.now().date():
+        if pancake.film_datetime.date() < datetime.now().date():
             del db[key]
 
 
@@ -306,7 +307,7 @@ def show_cache():
         log.exception('loading cache:')
 
 
-def main(market, market_timezone, disable_notify=False, disable_fetch=False):
+def main(market, disable_notify=False, disable_fetch=False):
     """Fetches pancake data, send notifications, and reports updates."""
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'config'))
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'cache'))
@@ -317,7 +318,7 @@ def main(market, market_timezone, disable_notify=False, disable_fetch=False):
 
     if not disable_fetch:
         try:
-            pancakes = api.query_pancakes(market, market_timezone, overrides)
+            pancakes = api.query_pancakes(market, overrides)
         except:
             pancakes = []
             log.exception('api error:')

@@ -52,7 +52,7 @@ def _selector_applies(selector, tag):
             return True
 
     if 'id' in tag.attrs and inner_selector == '#' + tag['id']:
-            return True
+        return True
 
     return False
 
