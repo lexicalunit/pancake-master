@@ -6,11 +6,38 @@ Pancake Master is two separate components: A python notification script which hi
 
 ## Notification Script
 
-Python script that searches for Master Pancake showtimes in Austin. Run it periodically to send out email notifications for newly detected or newly on-sale pancakes. Never miss out on getting tickets again! See requirements.txt for dependencies.
+Python script that searches for Master Pancake showtimes in Austin. Run it periodically to send out email notifications for newly detected or newly on-sale pancakes. Never miss out on getting tickets again! See requirements.txt for dependencies. For help pass `-h` or `--help` as a command line argument to the script.
 
 ## Dynamic Webpage
 
-Static HTML+AJAX solution which fetches and displays the most up-to-date Master Pancake information. Deploy to a webserver with dependencies pancake.css, jquery, and underscore. [See it live](http://lexicalunit.github.io/pancake-master) on GitHub pages!
+Static HTML+AJAX solution which fetches and displays the most up-to-date Master Pancake information. Publish to a webserver with dependencies pancake.css, jquery, and underscore. [See it live](http://lexicalunit.github.io/pancake-master) on GitHub pages!
+
+## Deploying and Publishing
+
+[Fabric](http://www.fabfile.org/) handles deploying and publishing. [YAML](http://pyyaml.org/) handles configuration of your deployments and publishing information. Install both first before proceeding. You must also create a `deploy.yaml` configuration file within the root of your clone of this repository. It must follow this format:
+
+```yaml
+user: 'you@domain.com'
+hosts: ['domain.com']
+web_remote_dir: '/path/to/publish/your/www/html'
+script_remote_dir: '/path/to/deploy/your/script'
+```
+
+> **NOTE:** Publishing and deploying require SSH access to your webspace.
+
+### Deploying the Notification Script
+
+```shell
+cd /path/to/pancake-master
+fab deploy
+```
+
+### Publishing the Dynamic Webpage
+
+```shell
+cd /path/to/pancake-master
+fab publish
+```
 
 ---
 
