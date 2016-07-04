@@ -1,12 +1,12 @@
 # Pancake Master
 
-![alt tag](https://lexicalunit.github.io/pancake-master/resources/image/preview.png)
+![preview](https://cloud.githubusercontent.com/assets/1903876/16548471/128994b0-4155-11e6-8c05-0db6efa91c01.png)
 
-This project is comprised of two separate components. The python notification script hits the Drafthouse API and looks for any relevant updates, and then notifiers users via email of any changes. The dynamic webpage component hits the same API using AJAX and then renders the information for in web browser. The email notifications and dynamic webpage are very similarly styled.
+Pancake Master is two separate components: A python notification script which hits the Drafthouse API and looks for any relevant updates, and a dynamic webpage component that hits the same API and uses AJAX to render the information in a web browser.
 
 ## Notification Script
 
-Python script that searches for Master Pancake showtimes in Austin. Run it periodically to send out email notifications whenever a new pancake is detected, or when a previously detected pancake goes on sale. Never miss out on getting tickets again! See requirements.txt for dependencies.
+Python script that searches for Master Pancake showtimes in Austin. Run it periodically to send out email notifications for newly detected or newly on-sale pancakes. Never miss out on getting tickets again! See requirements.txt for dependencies.
 
 ## Dynamic Webpage
 
