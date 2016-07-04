@@ -2,51 +2,68 @@
    License: none (public domain)
 */
 
-#status {
-    position: fixed;
-    top: 50px;
-    left: 10px;
-}
-
-#status a {
-    text-decoration: none;
-    color: black;
-    font-size: small;
-    font-family: sans-serif;
-}
-
-a.tooltip div {
-    z-index: 10;
+.status {
     display: none;
-    position: fixed;
-    top: -13px;
-    left: 80px;
 }
 
-a.tooltip:hover div {
-    display: block;
-}
+@media screen and (min-width:800px) {
+    .status {
+        display: block;
+        position: fixed;
+        top: 80px;
+        left: 15px;
+    }
 
-a.tooltip div {
-    position: absolute;
-    width: 300px;
-    line-height: 150%;
-    padding: 10px 16px 10px 8px;
-    text-align: left;
-    color: rgb(255, 255, 255);
-    background: rgb(96, 172, 57);
-    border: 0px;
-    border-radius: 0px 3px 3px 0px;
-}
+    div.status_items div {
+        z-index: 10;
+        display: none;
+        position: fixed;
+        top: -13px;
+        left: 80px;
+    }
 
-a.tooltip div:after {
-    content: "";
-    position: absolute;
-    width: 0;
-    height: 0;
-    border-width: 24px;
-    border-style: solid;
-    border-color: transparent #60AC39 transparent transparent;
-    top: 0px;
-    left: -48px;
+    div.status_items div {
+        position: absolute;
+        min-width: 500px;
+        line-height: 150%;
+        padding: 10px 16px 10px 8px;
+        text-align: left;
+        color: rgb(255, 255, 255);
+        background: rgb(96, 172, 57);
+        border: 0;
+        border-radius: 0 3px 3px 0;
+    }
+
+    div.status_items div:after {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-width: 24px;
+        border-style: solid;
+        border-color: transparent #60AC39 transparent transparent;
+        top: 0;
+        left: -48px;
+    }
+
+    .status div {
+        text-decoration: none;
+        color: white;
+        font-size: small;
+        font-family: sans-serif;
+    }
+
+    div.status_items:hover div {
+        display: block;
+    }
+
+    div.status_items .tooltip_content {
+        min-height: 80px;
+    }
+
+    div.status_items .status_header {
+        font-weight: bolder;
+        border-bottom: 1px dotted white;
+        margin-bottom: 1em;
+    }
 }

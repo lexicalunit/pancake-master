@@ -2,222 +2,72 @@
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Pancake Master</title>
-<link rel="stylesheet" type="text/css" href="resources/css/reset.css" />
+<!-- Bootstrap -->
+<link rel="stylesheet" type="text/css" href="resources/css/bootstrap.min.css" />
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
 <link rel="stylesheet" type="text/css" href="resources/css/pancake.css" />
 <link rel="stylesheet" type="text/css" href="resources/css/pancake-status.css" />
-<link rel="icon" type="image/png" href="resources/image/favicon.ico">
-<script type="text/javascript" src="resources/js/jquery-1.11.0.min.js"></script>
-<script type="text/javascript" src="resources/js/jquery.fittext.js"></script>
-<script type="text/javascript" src="resources/js/underscore-min.js"></script>
-<script type="text/javascript">
-var status_number = 0;
-var pancakes = [];
-
-function capwords(text) {
-    return text.replace(/\w\S*/g, function(txt) {
-        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-    });
-}
-
-function pad(num, size) {
-    var s = num + "";
-    while (s.length < size)
-        s = "0" + s;
-    return s;
-}
-
-function daystr() {
-    var today = new Date();
-    var dd = pad(today.getDate(), 2);
-    var mm = pad(today.getMonth() + 1, 2);
-    var yyyy = today.getFullYear();
-    return yyyy + mm + dd;
-}
-
-function status(text) {
-    window.status_number++;
-
-    var li = document.createElement('li');
-    li.className = "status_item";
-    li.id = "status_" + window.status_number;
-    li.innerHTML = text;
-
-    $("#statuses").append(li);
-
-    return window.status_number;
-}
-
-function status_update(text, number) {
-    $("#status_" + number).html(text);
-}
-
-function show_pancake(pancake) {
-    window.pancakes.push(pancake);
-
-    var template = _.template($("script.template").html());
-    $("#main").html(template(window.pancakes));
-
-    $("h1").fitText(1.5);
-    $("h2").fitText(3)
-}
-
-function parse_cinema(data) {
-    var status_message = "Parsing " + data.Cinema.CinemaName + " Data...";
-    var status_id = status(status_message);
-
-    for(var i = 0; i < data.Cinema.Dates.length; i++) {
-        var date_data = data.Cinema.Dates[i];
-        for(var j = 0; j < date_data.Films.length; j++) {
-            var film_data = date_data.Films[j];
-
-            if(!film_data.Film.match(/pancake/i) || !film_data.Film.match(/master/i)) {
-                continue; // DO NOT WANT!
-            }
-
-            for(var k = 0; k < film_data.Sessions.length; k++) {
-                var session_data = film_data.Sessions[k];
-                
-                pancake = {
-                    film: capwords(film_data.Film.replace("Master Pancake: ", "").toLowerCase())
-                    , film_uid: film_data.FilmId
-                    , cinema: data.Cinema.CinemaName
-                    , cinema_url: data.Cinema.CinemaURL
-                    , date: date_data.Date
-                    , time: session_data.SessionTime
-                    , status: session_data.SessionStatus
-                    , url: session_data.SessionStatus == "onsale" ? session_data.SessionSalesURL : null
-                };
-
-                show_pancake(pancake);
-            }
-        }
-    }
-
-    status_update(status_message + " done.", status_id);
-}
-
-function build_cinema(cinema) {
-    var status_message = "Fetching " + cinema.CinemaName + " Data...";
-    var status_id = status(status_message);
-
-    $.ajax({
-        url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/CinemaSessions.aspx"
-        , dataType: "jsonp"
-        , jsonp: "callback"
-        , data: {
-            cinemaid: pad(cinema.CinemaId, 4)
-        }
-        , success: parse_cinema
-    });
-
-    status_update(status_message + " done.", status_id);
-}
-
-function build_cinemas(cinemas) {
-    var status_message = "Parsing Cinemas Data...";
-    var status_id = status(status_message);
-
-    for(var i = 0; i < cinemas.length; i++) {
-        var cinema = cinemas[i];
-        build_cinema(cinema);
-    }
-
-    status_update(status_message + " done.", status_id);
-}
-
-function parse_market(data) {
-    var status_message = "Parsing Market Data...";
-    var status_id = status(status_message);
-
-    var cinemas = [];
-    for(var i = 0; i < data.Market.Cinemas.length; i++) {
-        var cinema = data.Market.Cinemas[i];
-        var item = {
-            CinemaId: cinema.CinemaId
-            , CinemaName: cinema.CinemaName
-            , CinemaURL: cinema.CinemaURL
-        };
-        cinemas.push(item);
-    }
-
-    status_update(status_message + " done.", status_id);
-
-    build_cinemas(cinemas);
-}
-
-function build_market() {
-    var status_message = "Fetching Market Data...";
-    var status_id = status(status_message);
-    
-    $.ajax({
-        url: "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/marketsessions.aspx"
-        , dataType: "jsonp"
-        , jsonp: "callback"
-        , data: {
-            date: daystr()
-            , marketid: pad(0, 4)
-        }
-        , success: parse_market
-    });
-
-    status_update(status_message + " done.", status_id);
-}
-
-function by_location(pancakes) {
-    return _.groupBy(pancakes, function(pancake) {
-        return [pancake.film, pancake.cinema];
-    });
-}
-
-function pancake_time(pancake) {
-    var span = document.createElement('span');
-    span.className = pancake.status;
-
-    if(pancake.status == "onsale") {
-        var a = document.createElement('a');
-        a.href = pancake.url;
-        a.innerHTML = pancake.time;
-        span.innerHTML = a.outerHTML;
-    } else {
-        span.innerHTML = pancake.time;
-    }
-
-    return span.outerHTML;
-}
-
-function pancake_times(pancakes) {
-    return pancakes.map(function(pancake) {
-        return pancake_time(pancake);
-    });
-}
-
-_.templateSettings.variable = "rc";
-</script>
-<script type="text/template" class="template">
-    <% _.each(by_location(rc), function(pancakes, location) { %>
-        <h1 class="film_heading"><a href="https://drafthouse.com/uid/<%= pancakes[0].film_uid %>"><%- pancakes[0].film %></a></h1>
-        <h2 class="cinema_heading"><a href="<%= pancakes[0].cinema_url %>"><%- pancakes[0].cinema %></a></h2>
-        <ul class="pancake_items">
-            <% _.each(_.groupBy(pancakes, 'date'), function(pancakes, date) { %>
-                <li class="pancake_item"><%- date %> - <%= pancake_times(pancakes).join(', ') %></li>
-            <% }); %>
-        </ul>
-    <% }) %>
-</script>
+<link rel="stylesheet" type="text/css" href="resources/css/web.css" />
+<link rel="icon" type="image/png" href="resources/image/favicon.ico" />
 </head>
-<body onload="build_market();">
-<div id="main"></div>
-<div id="status">
-    <a href="#" class="tooltip">
+<body>
+
+<div id="spin"></div>
+
+<div class="status">
+    <div class="status_items">
         + status
-        <div><ul id="statuses"></ul></div>
-    </a>
+        <div class="tooltip_content"><span class="status_header">Status Updates</span><ul id="statuses"><li class="status_item" id="status_1">Fetching Market Data... done.</li><li class="status_item" id="status_2">Parsing Market Data... done.</li><li class="status_item" id="status_3">Parsing Cinemas Data... done.</li><li class="status_item" id="status_4">Fetching Alamo Drafthouse Ritz Data... done.</li><li class="status_item" id="status_5">Fetching Alamo Drafthouse Lakeline Data... done.</li><li class="status_item" id="status_6">Fetching Alamo Drafthouse Village Data... done.</li><li class="status_item" id="status_7">Fetching Slaughter Lane Data... done.</li><li class="status_item" id="status_8">Fetching South Lamar Data... done.</li><li class="status_item" id="status_9">Parsing Alamo Drafthouse Ritz Data... done.</li><li class="status_item" id="status_10">Parsing Alamo Drafthouse Lakeline Data... done.</li><li class="status_item" id="status_11">Parsing Alamo Drafthouse Village Data... done.</li><li class="status_item" id="status_12">Parsing South Lamar Data... done.</li><li class="status_item" id="status_13">Parsing Slaughter Lane Data... done.</li></ul></div>
+    </div>
 </div>
-<div id="footer">
-    <a href="http://lexicalunit.github.io/pancake-master">Current showtimes from Pancake Master</a><br />
-    <a href="https://www.google.com/calendar/embed?src=hro2l5sss2c0231qla9d79fpcg%40group.calendar.google.com&ctz=US/Central">Calendar of showtimes</a><br />
-    <a href="https://github.com/lexicalunit/pancake-master">pancake-master on github.com</a><br />
+
+<div class="container search">
+    <form action="javascript:search()" class="form-inline">
+    <div class="form-group">
+        <label class="sr-only">Search</label>
+        <input class="form-control input-lg search" type="text" placeholder="Search" id="q" name="q" />
+    </div>
+    </form>
 </div>
+
+<div class="main" id="main"></div>
+
+<div class="forkongithub">
+    <a href="https://github.com/lexicalunit/pancake-master">Fork me on GitHub</a>
+</div>
+
+<script type="text/javascript" src="resources/js/jquery.min.js"></script>
+<script type="text/javascript" src="resources/js/jquery.fittext.js"></script>
+<script type="text/javascript" src="resources/js/jquery.storageapi.min.js"></script>
+<script type="text/javascript" src="resources/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="resources/js/spin.min.js"></script>
+<script type="text/javascript" src="resources/js/underscore-min.js"></script>
+<script type="text/javascript" src="resources/js/pancake.js"></script>
+<script type="text/template" class="template">
+<% _.each(by_location(rc), function(films, location) { %>
+<div class="data">
+  <h1 class="film_heading"><a href="https://drafthouse.com/uid/<%= films[0].film_uid %>"><%- films[0].title %></a></h1>
+  <h2 class="cinema_heading"><a href="<%= films[0].cinema_url %>"><%- films[0].cinema %></a></h2>
+  <ul class="film_items">
+    <% _.each(_.groupBy(films, 'date'), function(films, date) { %>
+      <li class="film_item"><%- date %> - <%= film_times(films).join(', ') %></li>
+    <% }); %>
+  </ul>
+</div>
+<% }) %>
+</script>
+
+<script type="text/javascript">
+  build_market();
+</script>
+
 </body>
 </html>
