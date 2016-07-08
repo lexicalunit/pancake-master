@@ -1,6 +1,4 @@
-var api_base = "https://d20ghz5p5t1zsc.cloudfront.net/adcshowtimeJson/";
-var n_found_cinemas = 0;
-var n_parsed_cinemas = 0;
+var api_base = "https://feeds.drafthouse.com/adcService/showtimes.svc/market";
 var search_terms = [];
 var status_number = 0;
 var storage = $.initNamespaceStorage("pancake").sessionStorage;
@@ -67,14 +65,6 @@ function pad(num, size) {
     return s;
 }
 
-function daystr() {
-    var today = new Date();
-    var dd = pad(today.getDate(), 2);
-    var mm = pad(today.getMonth() + 1, 2);
-    var yyyy = today.getFullYear();
-    return yyyy + mm + dd;
-}
-
 function status(text) {
     window.status_number++;
     var li = document.createElement('li');
@@ -120,84 +110,55 @@ function build_films(films) {
     $("h2").fitText(3);
 }
 
-function parse_cinema(data) {
-    var status_message = "Parsing " + data.Cinema.CinemaName + " Data...";
-    var status_id = status(status_message);
-    var films = window.storage.isSet("films") ? window.storage.get("films") : [];
-    for(var i = 0; i < data.Cinema.Dates.length; i++) {
-        var date_data = data.Cinema.Dates[i];
-        for(var j = 0; j < date_data.Films.length; j++) {
-            var film_data = date_data.Films[j];
-            for(var k = 0; k < film_data.Sessions.length; k++) {
-                var session_data = film_data.Sessions[k];
-                film = {
-                    title: capwords(film_data.Film.toLowerCase())
-                    , film_uid: film_data.FilmId
-                    , cinema: data.Cinema.CinemaName
-                    , cinema_url: data.Cinema.CinemaURL
-                    , date: date_data.Date
-                    , time: session_data.SessionTime
-                    , status: session_data.SessionStatus
-                    , url: session_data.SessionStatus == "onsale" ? session_data.SessionSalesURL : null
-                };
-                films.push(film);
-            }
-        }
-    }
-    window.storage.set("films", films);
-    status_update(status_message + " done.", status_id);
-}
-
-function build_cinema(cinema) {
-    var status_message = "Fetching " + cinema.CinemaName + " Data...";
-    var status_id = status(status_message);
-    $.when($.ajax({
-        url: window.api_base + "CinemaSessions.aspx"
-        , dataType: "jsonp"
-        , jsonp: "callback"
-        , data: {
-            cinemaid: pad(cinema.CinemaId, 4)
-        }
-        , success: parse_cinema
-    })).then(function(data, textStatus, jqXHR) {
-        status_update(status_message + " done.", status_id);
-        window.n_parsed_cinemas++;
-        if(window.n_parsed_cinemas == window.n_found_cinemas) {
-            window.spinner.stop();
-            search();
-        }
-    });
-}
-
-function build_cinemas(cinemas) {
-    var status_message = "Parsing Cinemas Data...";
-    var status_id = status(status_message);
-    for(var i = 0; i < cinemas.length; i++) {
-        var cinema = cinemas[i];
-        build_cinema(cinema);
-    }
-    status_update(status_message + " done.", status_id);
+function slugify(text) {
+    return text.toLowerCase().replace(/[^\w ]+/g,'').replace(/ +/g,'-');
 }
 
 function parse_market(data) {
     var status_message = "Parsing Market Data...";
     var status_id = status(status_message);
-    var cinemas = [];
-    for(var i = 0; i < data.Market.Cinemas.length; i++) {
-        var cinema = data.Market.Cinemas[i];
-        if(cinema.CinemaId == '0090') {
-            continue;
+    var shows = [];
+    for(var d = 0; d < data.Market.Dates.length; d++) {
+        var date = data.Market.Dates[d];
+        var film_date = date.Date;
+        for(var c = 0; c < date.Cinemas.length; c++) {
+            var cinema = date.Cinemas[c];
+            var cinema_id = cinema.CinemaId;
+            var cinema_name = "Alamo Drafthouse " + cinema.CinemaName;
+            var cinema_url = "https://drafthouse.com/theater/" + slugify(cinema.CinemaName);
+            for(var f = 0; f < cinema.Films.length; f++) {
+                var film = cinema.Films[f];
+                var film_uid = film.FilmId;
+                var film_name = film.FilmName;
+                for(var s = 0; s < film.Series.length; s++) {
+                    var series = film.Series[s];
+                    for(var m = 0; m < series.Formats.length; m++) {
+                        var format = series.Formats[m];
+                        for(var n = 0; n < format.Sessions.length; n++) {
+                            var session = format.Sessions[n];
+                            var session_id = session.SessionId;
+                            var film_url = "https://drafthouse.com/ticketing/" + cinema_id + "/" + session_id;
+                            var show = {
+                                title: capwords(film_name.toLowerCase()),
+                                film_uid: film_uid,
+                                cinema: cinema_name,
+                                cinema_url: cinema_url,
+                                date: film_date,
+                                time: session.SessionTime,
+                                status: session.SessionStatus,
+                                url: session.SessionStatus == "onsale" ? film_url : null,
+                            };
+                            shows.push(show);
+                        }
+                    }
+                }
+            }
         }
-        var item = {
-            CinemaId: cinema.CinemaId
-            , CinemaName: cinema.CinemaName
-            , CinemaURL: cinema.CinemaURL
-        };
-        cinemas.push(item);
     }
-    window.n_found_cinemas = cinemas.length;
+    window.storage.set("films", shows);
+    window.spinner.stop();
     status_update(status_message + " done.", status_id);
-    build_cinemas(cinemas);
+    search();
 }
 
 function initialize_page() {
@@ -225,15 +186,10 @@ function build_market() {
     }
     var status_message = "Fetching Market Data...";
     var status_id = status(status_message);
+    var marketid = pad(0, 4);
     $.when($.ajax({
-        url: window.api_base + "marketsessions.aspx"
-        , dataType: "jsonp"
-        , jsonp: "callback"
-        , data: {
-            date: daystr()
-            , marketid: pad(0, 4)
-        }
-        , success: parse_market
+        url: window.api_base + '/' + marketid,
+        success: parse_market,
     })).then(function(data, textStatus, jqXHR) {
         status_update(status_message + " done.", status_id);
     });
