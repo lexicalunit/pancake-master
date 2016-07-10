@@ -1,7 +1,16 @@
 /* global $, _, Spinner */
 /* exported build_market, by_location, film_times */
 
-var api_base = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market'
+var feed_api_url = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market/0000'
+var proxy_api_url = 'https://vl9ijl59gk.execute-api.us-west-2.amazonaws.com/prod'
+var api_url
+var use_proxy = true
+if (use_proxy) {
+  api_url = proxy_api_url
+} else {
+  api_url = feed_api_url
+}
+
 var search_terms = []
 var status_number = 0
 var storage = $.initNamespaceStorage('pancake').sessionStorage
@@ -62,14 +71,6 @@ function capwords (text) {
   return text.replace(/\w\S*/g, function (txt) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
   })
-}
-
-function pad (num, size) {
-  var s = num + ''
-  while (s.length < size) {
-    s = '0' + s
-  }
-  return s
 }
 
 function status (text) {
@@ -200,13 +201,15 @@ function build_market () {
   }
   var status_message = 'Fetching Market Data...'
   var status_id = status(status_message)
-  var marketid = pad(0, 4)
+
   $.when($.ajax({
-    url: api_base + '/' + marketid,
-    success: parse_market,
-    error: function (jqXHR, status, error) {
-      // status_update(status_message + "failed: " + status + ": " + error)
-    }
+    url: api_url,
+    type: 'GET',
+    crossDomain: true,
+    beforeSend: function (request) {
+      request.setRequestHeader('Accept', 'application/json')
+    },
+    success: parse_market
   })).then(function (data, status, jqXHR) {
     status_update(status_message + ' done.', status_id)
   })
