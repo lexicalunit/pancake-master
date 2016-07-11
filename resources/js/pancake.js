@@ -1,5 +1,5 @@
 /* global $, _, Spinner */
-/* exported build_market, by_location, film_times */
+/* exported build_market, by_location, film_times, show_all_titles */
 
 // TODO: Support other markets.
 var feed_api_url = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market/0000' // Austin
@@ -220,12 +220,18 @@ function show_titles () {
   var sorted_titles = Object.keys(titles).sort()
   $('#q').autocomplete({
     source: sorted_titles,
+    minLength: 0,
     select: function (event, ui) {
       $('#q').val('"' + escape_reg_exp(ui.item.value) + '"')
       search()
       return false
     }
   })
+}
+
+function show_all_titles () {
+  $('#q').autocomplete('search', '')
+  $('#q').focus()
 }
 
 function build_market () {
