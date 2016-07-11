@@ -16,6 +16,7 @@
 <link rel="stylesheet" type="text/css" href="resources/css/pancake.css" />
 <link rel="stylesheet" type="text/css" href="resources/css/pancake-status.css" />
 <link rel="stylesheet" type="text/css" href="resources/css/web.css" />
+<link rel="stylesheet" type="text/css" href="resources/css/jquery-ui.css" />
 <link rel="icon" type="image/png" href="resources/image/favicon.ico" />
 </head>
 <body>
@@ -31,10 +32,11 @@
 
 <div class="container search">
     <form action="javascript:search()" class="form-inline">
-    <div class="form-group">
-        <label class="sr-only">Search</label>
-        <input class="form-control input-lg search" type="text" placeholder="Search" id="q" name="q" />
-    </div>
+        <div class="form-group">
+            <label class="sr-only">Search</label>
+            <input class="form-control input-lg search" type="text" placeholder="Search" id="q" name="q" />
+            <button onclick="show_all_titles()">⌵</button>
+        </div>
     </form>
 </div>
 
@@ -47,6 +49,7 @@
 <script type="text/javascript" src="resources/js/jquery.min.js"></script>
 <script type="text/javascript" src="resources/js/jquery.fittext.js"></script>
 <script type="text/javascript" src="resources/js/jquery.storageapi.min.js"></script>
+<script type="text/javascript" src="resources/js/jquery-ui.min.js"></script>
 <script type="text/javascript" src="resources/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="resources/js/spin.min.js"></script>
 <script type="text/javascript" src="resources/js/underscore-min.js"></script>
