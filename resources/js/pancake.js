@@ -1,10 +1,16 @@
 /* global $, _, Spinner */
 /* exported build_market, by_location, film_times */
 
-var feed_api_url = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market/0000'
+// TODO: Support other markets.
+var feed_api_url = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market/0000' // Austin
+
+// NOTE: There's an issue with CORS on iOS mobile web browsers, so I created a
+//       CORS enabled AWS API that simply proxies the feed_api_url, above.
+// TODO: Figure out if there's any way to resolve this issue without this workaround.
 var proxy_api_url = 'https://vl9ijl59gk.execute-api.us-west-2.amazonaws.com/prod'
-var api_url
 var use_proxy = true
+
+var api_url
 if (use_proxy) {
   api_url = proxy_api_url
 } else {
@@ -56,13 +62,12 @@ var query_parameters = {}
 function init_query () {
   window.search_terms = ['pancake']
   if ('q' in query_parameters) {
-    // query = query_parameters['q']
     if (!$('#q').val()) {
       $('#q').val(query_parameters['q'])
     }
   }
-  var terms = $('#q').val().split(/[\s,]+/)
-  if (terms.length && terms[0].length) {
+  var terms = $('#q').val().match(/\w+|"(?:\\"|[^"])+"/g)
+  if (terms && terms.length && terms[0].length) {
     window.search_terms = terms
   }
 }
@@ -87,6 +92,10 @@ function status_update (text, number) {
   $('#status_' + number).html(text)
 }
 
+function escape_reg_exp (str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&')
+}
+
 function search () {
   $('#main').empty()
   init_query()
@@ -101,9 +110,16 @@ function search () {
   build_films(matching_films)
 }
 
+function unquote (str) {
+  var quote_char = '"'
+  if (str[0] === quote_char && str[str.length - 1] === quote_char) {
+    return str.slice(1, str.length - 1)
+  } else return str
+}
+
 function matches_search (title) {
   for (var i = 0; i < search_terms.length; i++) {
-    var re = new RegExp(search_terms[i], 'i')
+    var re = new RegExp(unquote(search_terms[i]), 'i')
     if (title.match(re)) {
       return true
     }
@@ -128,6 +144,7 @@ function parse_market (data) {
     status('error: ' + data.error)
     storage.set('films', shows)
     spinner.stop()
+    show_titles()
     search()
     return
   }
@@ -173,6 +190,7 @@ function parse_market (data) {
   status_update(status_message + ' done.', status_id)
   storage.set('films', shows)
   spinner.stop()
+  show_titles()
   search()
 }
 
@@ -190,12 +208,33 @@ function initialize_storage () {
   return true
 }
 
+function show_titles () {
+  var films = storage.isSet('films') ? storage.get('films') : []
+  var titles = {}
+  for (var i = 0; i < films.length; i++) {
+    var film = films[i]
+    if (!(film.title in titles)) {
+      titles[film.title] = true
+    }
+  }
+  var sorted_titles = Object.keys(titles).sort()
+  $('#q').autocomplete({
+    source: sorted_titles,
+    select: function (event, ui) {
+      $('#q').val('"' + escape_reg_exp(ui.item.value) + '"')
+      search()
+      return false
+    }
+  })
+}
+
 function build_market () {
   initialize_page()
   var did_initialize_storage = initialize_storage()
   if (!did_initialize_storage) {
     status('Data fetched from session storage.')
     spinner.stop()
+    show_titles()
     search()
     return
   }
