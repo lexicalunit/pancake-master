@@ -7,14 +7,15 @@ import logging
 import os
 import pickle
 import smtplib
+import time
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from itertools import count, groupby
 
-import tinycss
 from bs4 import BeautifulSoup
 
+import tinycss
 from lib import AlamoDrafthouseAPI as api
 from lib.InlineCSS import styled
 
@@ -39,8 +40,8 @@ def date_string(dt):
 
 def time_string(dt):
     """Returns a time string representation of the given datetime object."""
-    time = datetime.strftime(dt, TIME_FORMAT).lstrip('0')
-    return time[:-2] + 'p' if time.endswith('PM') else time[:-2]
+    ts = datetime.strftime(dt, TIME_FORMAT).lstrip('0')
+    return ts[:-2] + 'p' if ts.endswith('PM') else ts[:-2]
 
 
 def datetime_string(dt):
@@ -76,11 +77,11 @@ def html_digest(pancakes):
     pancakes = sorted(pancakes, key=pancake_sort_key)
 
     # things to group by
-    by_film_and_cinema = lambda p: (p.film_id, p.film_name, p.cinema.cinema_url, p.cinema.cinema_name)
+    by_film_cinema = lambda p: (p.film_id, p.film_name, p.cinema.cinema_url, p.cinema.cinema_name)
     by_day = lambda p: p.film_datetime.date()
 
     soup = BeautifulSoup('')
-    for key, pancakes in groupby(pancakes, key=by_film_and_cinema):
+    for key, pancakes in groupby(pancakes, key=by_film_cinema):
         film_id, film, cinema_url, cinema = key
 
         film_heading = BeautifulSoup('<h1><a></a></h1>')
@@ -126,10 +127,8 @@ def html_digest(pancakes):
         parser = tinycss.make_parser('page3')
         stylesheet = parser.parse_stylesheet_file(STYLE_FILE)
         style = {
-            r.selector.as_css(): {
-                d.name: d.value.as_css()
-                for d in r.declarations
-            }
+            r.selector.as_css(): {d.name: d.value.as_css()
+                                  for d in r.declarations}
             for r in stylesheet.rules
         }
     except Exception as e:
@@ -155,11 +154,12 @@ def text_digest(pancakes):
             status = 'Sold out.'
         else:  # pancake.film_status == 'notonsale'
             status = 'Not on sale yet.'
-        params = (pancake.film_name.encode('utf-8'),
-                  pancake.cinema.cinema_name,
-                  date_string(pancake.film_datetime),
-                  time_string(pancake.film_datetime),
-                  status, )
+        params = (
+            pancake.film_name.encode('utf-8'),
+            pancake.cinema.cinema_name,
+            date_string(pancake.film_datetime),
+            time_string(pancake.film_datetime),
+            status, )
         text += '{}\n{}\n{}\n{}\n{}'.format(*params)
         if pancake.film_status == 'onsale':
             text += '\n{}'.format(pancake.film_url)
@@ -187,6 +187,7 @@ def notify(pancakes, recipients):
 
     try:
         s = smtplib.SMTP('localhost')
+        time.sleep(2)  # Calling sendmail() too soon seems to not work because SMTP sucks.
         s.sendmail(msg['From'], recipients, msg.as_string())
         s.quit()
         log.info('sent email(s) to {}'.format(', '.join(recipients)))
