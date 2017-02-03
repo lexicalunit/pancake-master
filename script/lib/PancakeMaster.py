@@ -7,7 +7,6 @@ import logging
 import os
 import pickle
 import smtplib
-import time
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -26,6 +25,8 @@ RESOURCES_DIRECTORY = 'resources'
 PICKLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'cache', 'pancake.pickle')
 RECIPIENTS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'pancake.list')
 OVERRIDES_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'overrides.list')
+USER_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'user')
+PASS_FILE = os.path.join(RESOURCES_DIRECTORY, 'config', 'pass')
 STYLE_FILE = os.path.join(RESOURCES_DIRECTORY, 'css', 'pancake.css')
 TEMPLATE_FILE = os.path.join(RESOURCES_DIRECTORY, 'template', 'pancake.html')
 
@@ -137,7 +138,8 @@ def html_digest(pancakes):
 
     # load HTML template
     try:
-        template = open(TEMPLATE_FILE, 'r').read()
+        with open(TEMPLATE_FILE, 'r') as f:
+            template = f.read()
         return styled(template.format(content=content), style)
     except Exception as e:
         log.warn('could not load HTML template file: {}'.format(e))
@@ -187,7 +189,8 @@ def notify(pancakes, recipients):
 
     try:
         s = smtplib.SMTP('localhost')
-        time.sleep(2)  # Calling sendmail() too soon seems to not work because SMTP sucks.
+        s.set_debuglevel(1)
+        s.login(load_user(), load_pass())
         s.sendmail(msg['From'], recipients, msg.as_string())
         s.quit()
         log.info('sent email(s) to {}'.format(', '.join(recipients)))
@@ -260,10 +263,21 @@ def prune_database(db):
             del db[key]
 
 
-def load_rerecipients():
+def load_user():
+    with open(USER_FILE) as f:
+        return f.readlines()[0].strip()
+
+
+def load_pass():
+    with open(PASS_FILE) as f:
+        return f.readlines()[0].strip()
+
+
+def load_recipients():
     """Returns list of email addresses to notify."""
     try:
-        return [line.strip() for line in open(RECIPIENTS_FILE)]
+        with open(RECIPIENTS_FILE) as f:
+            return [line for line in (line.strip() for line in f.readlines()) if line]
     except:
         log.warn('no email recipients found, not sending email notifications...')
     return []
@@ -272,7 +286,8 @@ def load_rerecipients():
 def load_overrides():
     """Returns list of film overrides to notify for in addition to pancakes."""
     try:
-        return [line.strip() for line in open(OVERRIDES_FILE)]
+        with open(OVERRIDES_FILE) as f:
+            return [line for line in (line.strip() for line in f.readlines()) if line]
     except:
         pass
     return []
@@ -315,7 +330,7 @@ def main(market, disable_notify=False, disable_fetch=False):
     mkdir_p(os.path.join(RESOURCES_DIRECTORY, 'cache'))
 
     db = load_database()
-    recipients = load_rerecipients()
+    recipients = load_recipients()
     overrides = load_overrides()
 
     if not disable_fetch:
