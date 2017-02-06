@@ -1,4 +1,5 @@
 beautifulsoup4
+certifi
 fabric
 httplib2
 python-dateutil

@@ -54,7 +54,7 @@ def query(url, **kwargs):
     """Queries given Alamo Drafthouse API url using all kwargs as API parameters."""
     try:
         log.info('querying url "{}" with params {}'.format(url, kwargs))
-        resp = requests.get(url, params=kwargs, verify=False)
+        resp = requests.get(url, params=kwargs, verify=True)
         data = resp.json()
     except Exception as e:
         log.error('market sessions fail: {}'.format(e))
