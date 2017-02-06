@@ -202,9 +202,9 @@ def notify(pancakes, recipients):
 def pancake_key(pancake):
     """Creates a unique id for a given pancake."""
     m = hashlib.md5()
-    m.update(pancake.film_name)
-    m.update(pancake.cinema.cinema_name)
-    m.update(datetime_string(pancake.film_datetime))
+    m.update(pancake.film_name.encode('utf-8'))
+    m.update(pancake.cinema.cinema_name.encode('utf-8'))
+    m.update(datetime_string(pancake.film_datetime).encode('utf-8'))
     return m.hexdigest()
 
 
@@ -226,14 +226,9 @@ def load_database():
     log.info('loading {}'.format(filename))
 
     try:
-        with gzip.GzipFile(filename, 'rb') as f:
-            buf = ''
-            while True:
-                data = f.read()
-                if data == '':
-                    break
-                buf += data
-            return pickle.loads(buf)
+        with gzip.open(filename, 'rb') as f:
+            data = f.read()
+            return pickle.loads(data)
     except Exception as e:
         log.error('load failure: {}'.format(e))
         log.warn('creating new pancake database...')
