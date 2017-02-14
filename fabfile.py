@@ -55,7 +55,6 @@ def deploy_project(local_dir, remote_dir, exclude=[]):
 
         def sync(local_dir):
             cmd_params['local_dir'] = local_dir
-            print "wtf = ", cmd.format(**cmd_params)
             local(cmd.format(**cmd_params))
 
     try:
