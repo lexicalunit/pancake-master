@@ -269,7 +269,6 @@ function by_location (films) {
 }
 
 function film_time (film) {
-  //console.log(film)
   var span = document.createElement('span')
   span.className = film.status
   if (film.status === 'onsale') {
