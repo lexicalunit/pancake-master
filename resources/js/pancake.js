@@ -277,7 +277,7 @@ function film_time (film) {
     a.href = film.url
     a.innerHTML = film.time
     span.innerHTML = a.outerHTML
-    span.setAttribute("session_id", film.session_id)
+    span.setAttribute('session_id', film.session_id)
     $.when($.ajax({
       url: 'https://drafthouse.com/s/vista/wsVistaWebClient/RESTData.svc/cinemas/' + film.cinema_id + '/sessions/' + film.session_id + '/seat-plan',
       type: 'GET',
@@ -285,7 +285,7 @@ function film_time (film) {
       beforeSend: function (request) {
         request.setRequestHeader('Accept', 'application/json')
       },
-      success: function(data) { do_seating(data,film.session_id)}
+      success: function (data) { do_seating(data, film.session_id) }
     }))
   } else {
     span.innerHTML = film.time
@@ -293,31 +293,26 @@ function film_time (film) {
   return span.outerHTML
 }
 function do_seating (data, session_id) {
-  console.log(data, session_id)
-  span = $('span[session_id="'+ session_id + '"]')[0]
-  required_seats = $('select[name="seats"]').val()
-  minimum_row = $('select[name="min_row"]').val()
-  found_seat = false
-  if (span)
-  {
+  var span = $('span[session_id="' + session_id + '"]')[0]
+  var required_seats = $('select[name="seats"]').val()
+  var minimum_row = $('select[name="min_row"]').val()
+  var found_seat = false
+  if (span) {
     for (var area_i = 0; area_i < data.SeatLayoutData.Areas.length; area_i++) {
-      rows = data.SeatLayoutData.Areas[area_i].Rows
-      for (var row_i = 0; row_i < rows.length; row_i++ ) {
-        console.log('physname:' + rows[row_i].PhysicalName + ' index:' + row_i)
+      var rows = data.SeatLayoutData.Areas[area_i].Rows
+      for (var row_i = 0; row_i < rows.length; row_i++) {
         if (rows[row_i].PhysicalName > minimum_row) {
-          seats = rows[row_i].Seats
-          cur_max = 0
+          var seats = rows[row_i].Seats
+          var cur_max = 0
           for (var seat_i = 0; seat_i < seats.length; seat_i++) {
-            if (seats[seat_i].Priority == 0  && seats[seat_i].Status == 0) {
+            if (seats[seat_i].Priority == 0 && seats[seat_i].Status == 0) {
               cur_max += 1
-              console.log("open seat row: " + row_i + ' seat:' + seat_i)
               if (cur_max >= required_seats) {
                 span.className = 'onsale'
                 found_seat = true
-                console.log("Found seat row: " + row_i)
                 break
               }
-            }else{
+            } else {
               cur_max = 0
             }
           }
@@ -326,7 +321,7 @@ function do_seating (data, session_id) {
           }
         }
       }
-      if (!found_seat){
+      if (!found_seat) {
         if (span) {
           span.className = 'soldout'
         }
