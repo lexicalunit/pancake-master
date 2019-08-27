@@ -1,14 +1,14 @@
 /* global $, _, Spinner */
 /* exported build_market, by_location, film_times, show_all_titles */
 
-// TODO: Support other markets.
-var feed_api_url = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market/0000' // Austin
+window.market = '0000' // Default: Austin
+var feed_api_url = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market/'
 
 // NOTE: There's an issue with CORS on iOS mobile web browsers, so I created a
 //       CORS enabled AWS API that simply proxies the feed_api_url, above.
 // TODO: Figure out if there's any way to resolve this issue without this workaround.
 var proxy_api_url = 'https://vl9ijl59gk.execute-api.us-west-2.amazonaws.com/prod'
-var use_proxy = true
+var use_proxy = false
 
 var api_url
 if (use_proxy) {
@@ -60,6 +60,10 @@ var query_parameters = {}
 // Default to searching for Master Pancake shows, then consider query parameter
 // if it has been provided, and finally override with any search input.
 function init_query () {
+  if ('m' in query_parameters) {
+    window.market = query_parameters['m']
+  }
+
   window.search_terms = ['pancake']
   if ('q' in query_parameters) {
     if (!$('#q').val()) {
@@ -202,8 +206,8 @@ function initialize_page () {
   status_number = 0
 }
 
-function initialize_storage () {
-  if (storage.isSet('films')) return false
+function initialize_storage (new_market) {
+  if (storage.isSet('films') && !new_market) return false
   storage.set('films', [])
   return true
 }
@@ -234,9 +238,14 @@ function show_all_titles () {
   $('#q').focus()
 }
 
+var last_market = null
 function build_market () {
   initialize_page()
-  var did_initialize_storage = initialize_storage()
+
+  var new_market = !last_market || query_parameters['m'] !== last_market
+  var did_initialize_storage = initialize_storage(new_market)
+  last_market = query_parameters['m']
+
   if (!did_initialize_storage) {
     status('Data fetched from session storage.')
     spinner.stop()
@@ -247,8 +256,15 @@ function build_market () {
   var status_message = 'Fetching Market Data...'
   var status_id = status(status_message)
 
+  var url
+  if (use_proxy) {
+    url = `${api_url}?m=${window.market}`
+  } else {
+    url = `${api_url}/${window.market}`
+  }
+
   $.when($.ajax({
-    url: api_url,
+    url: url,
     type: 'GET',
     crossDomain: true,
     beforeSend: function (request) {
