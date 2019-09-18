@@ -26,16 +26,29 @@
 <div class="status">
     <div class="status_items">
         + status
-        <div class="tooltip_content"><span class="status_header">Status Updates</span><ul id="statuses"><li class="status_item" id="status_1">Fetching Market Data... done.</li><li class="status_item" id="status_2">Parsing Market Data... done.</li><li class="status_item" id="status_3">Parsing Cinemas Data... done.</li><li class="status_item" id="status_4">Fetching Alamo Drafthouse Ritz Data... done.</li><li class="status_item" id="status_5">Fetching Alamo Drafthouse Lakeline Data... done.</li><li class="status_item" id="status_6">Fetching Alamo Drafthouse Village Data... done.</li><li class="status_item" id="status_7">Fetching Slaughter Lane Data... done.</li><li class="status_item" id="status_8">Fetching South Lamar Data... done.</li><li class="status_item" id="status_9">Parsing Alamo Drafthouse Ritz Data... done.</li><li class="status_item" id="status_10">Parsing Alamo Drafthouse Lakeline Data... done.</li><li class="status_item" id="status_11">Parsing Alamo Drafthouse Village Data... done.</li><li class="status_item" id="status_12">Parsing South Lamar Data... done.</li><li class="status_item" id="status_13">Parsing Slaughter Lane Data... done.</li></ul></div>
+        <div class="tooltip_content">
+          <span class="status_header">Status Updates</span>
+          <ul id="statuses"></ul>
+        </div>
     </div>
 </div>
 
 <div class="container search">
     <form action="javascript:search()" class="form-inline">
         <div class="form-group">
-            <label class="sr-only">Search</label>
-            <input class="form-control input-lg search" type="text" placeholder="Search" id="q" name="q" />
+            <label class="sr-only">Master Pancake</label>
+            <input class="form-control input-lg search" type="text" placeholder="Master Pancake" id="q" name="q" />
             <button onclick="show_all_titles()">⌵</button>
+        </div>
+    </form>
+</div>
+
+<div class="container markets">
+    <form action="javascript:search()" class="form-inline">
+        <div class="form-group">
+            <label class="sr-only">Austin</label>
+            <input class="form-control input-lg markets" type="text" placeholder="Austin" id="m" name="m" />
+            <button onclick="show_all_markets()">⌵</button>
         </div>
     </form>
 </div>
