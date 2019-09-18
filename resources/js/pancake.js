@@ -1,7 +1,7 @@
 /* global $, _, Spinner */
 /* exported build_market, by_location, film_times, show_all_titles */
 
-window.market = '0000' // Default: Austin
+window.markets = {}
 var feed_api_url = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market/'
 
 // NOTE: There's an issue with CORS on iOS mobile web browsers, so I created a
@@ -57,13 +57,18 @@ var query_parameters = {}
   }
 })()
 
+const austin_market_id = '0000'
+function selected_market () {
+  const value = $('#m')[0].value
+  if (value && value !== 'Austin') {
+    return window.markets[value] || austin_market_id
+  }
+  return austin_market_id
+}
+
 // Default to searching for Master Pancake shows, then consider query parameter
 // if it has been provided, and finally override with any search input.
 function init_query () {
-  if ('m' in query_parameters) {
-    window.market = query_parameters['m']
-  }
-
   window.search_terms = ['pancake']
   if ('q' in query_parameters) {
     if (!$('#q').val()) {
@@ -140,6 +145,29 @@ function build_films (films) {
 
 function slugify (text) {
   return text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+}
+
+function parse_markets (response) {
+  const { data } = response
+  if (!data) return
+  const { marketSummaries } = data
+  if (!marketSummaries) return
+  const marketNames = [];
+  marketSummaries.forEach(summary => {
+    marketNames.push(summary.name)
+    window.markets[summary.name] = summary.id
+  })
+  $('#m').autocomplete({
+    source: marketNames,
+    minLength: 0,
+    select: function (event, ui) {
+      $('#m').val(ui.item.value)
+      build_market()
+      return false
+    }
+  })
+
+
 }
 
 function parse_market (data) {
@@ -238,13 +266,19 @@ function show_all_titles () {
   $('#q').focus()
 }
 
+function show_all_markets () {
+  $('#m').autocomplete('search', '')
+  $('#m').focus()
+}
+
 var last_market = null
 function build_market () {
   initialize_page()
 
-  var new_market = !last_market || query_parameters['m'] !== last_market
+  var current_market = selected_market()
+  var new_market = !last_market || current_market !== last_market
   var did_initialize_storage = initialize_storage(new_market)
-  last_market = query_parameters['m']
+  last_market = current_market
 
   if (!did_initialize_storage) {
     status('Data fetched from session storage.')
@@ -258,10 +292,20 @@ function build_market () {
 
   var url
   if (use_proxy) {
-    url = `${api_url}?m=${window.market}`
+    url = `${api_url}?m=${current_market}`
   } else {
-    url = `${api_url}/${window.market}`
+    url = `${api_url}/${current_market}`
   }
+
+  $.when($.ajax({
+    url: 'https://drafthouse.com/s/mother/v1/page/cclamp',
+    type: 'GET',
+    crossDomain: true,
+    beforeSend: function (request) {
+      request.setRequestHeader('Accept', 'application/json')
+    },
+    success: parse_markets
+  }))
 
   $.when($.ajax({
     url: url,
