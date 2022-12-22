@@ -70,7 +70,7 @@
 <script type="text/template" class="template">
 <% _.each(by_location(rc), function(films, location) { %>
 <div class="data">
-  <h1 class="film_heading"><a href="https://drafthouse.com/uid/<%= films[0].film_uid %>"><%- films[0].title %></a></h1>
+  <h1 class="film_heading"><a href="https://drafthouse.com/<%= films[0].market_slug %>/show/<%= films[0].film_slug %>?cinemaId=<%= films[0].cinema_id %>"><%- films[0].title %></a></h1>
   <h2 class="cinema_heading"><a href="<%= films[0].cinema_url %>"><%- films[0].cinema %></a></h2>
   <ul class="film_items">
     <% _.each(_.groupBy(films, 'date'), function(films, date) { %>
