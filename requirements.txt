@@ -6,6 +6,5 @@ python-dateutil
 pytz
 pyyaml
 requests
-slugify
 tinycss
 uritemplate

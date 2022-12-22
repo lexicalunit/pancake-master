@@ -6,7 +6,6 @@ import logging
 import dateutil.parser
 import requests
 from pytz import timezone
-from slugify import slugify
 
 SHOWTIMES_BASE_URL = "https://feeds.drafthouse.com/adcService/showtimes.svc/market"
 DRAFTHOUSE_BASE_URL = "https://drafthouse.com"
@@ -15,14 +14,15 @@ log = logging.getLogger(__name__)
 
 
 class Cinema:
-    def __init__(self, cinema_id, cinema_name, market_slug):
+    def __init__(self, cinema_id, cinema_slug, cinema_name, market_slug):
         self.cinema_id = cinema_id
+        self.cinema_slug = cinema_slug
         self.cinema_name = cinema_name
         self.cinema_market_slug = market_slug
 
     @property
     def cinema_url(self):
-        return "{}/theater/{}".format(DRAFTHOUSE_BASE_URL, slugify(self.cinema_name))
+        return "{}/theater/{}".format(DRAFTHOUSE_BASE_URL, self.cinema_slug)
 
 
 class Film:
@@ -88,8 +88,14 @@ def query_pancakes(market_id, overrides):
         log.debug("date: %s", date_data.get("Date"))
         for cinema_data in date_data.get("Cinemas", []):
             cinema_name = cinema_data.get("CinemaName")
+            cinema_slug = cinema_data.get("CinemaSlug")
             log.debug("cinema: %s", cinema_name)
-            cinema = Cinema(cinema_data.get("CinemaId"), cinema_name, market_slug)
+            cinema = Cinema(
+                cinema_data.get("CinemaId"),
+                cinema_slug,
+                cinema_name,
+                market_slug,
+            )
             cinema_timezone = timezone(cinema_data.get("CinemaTimeZoneATE"))
             for film_data in cinema_data.get("Films", []):
                 film_id = film_data.get("FilmId")
