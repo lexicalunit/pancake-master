@@ -216,8 +216,6 @@ def notify(pancakes, recipients):
     msg.attach(MIMEText(plain, "plain"))
     msg.attach(MIMEText(html_digest(pancakes), "html"))
 
-    print(msg)
-
     try:
         s = smtplib.SMTP("localhost")
         s.set_debuglevel(1)
