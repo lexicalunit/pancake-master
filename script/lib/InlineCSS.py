@@ -3,40 +3,42 @@ from bs4 import BeautifulSoup
 
 def _apply_style(tag, tag_style):
     """Helper: Inlines the given tag style to the given tag's style attribute."""
-    if 'style' not in tag.attrs:
-        tag['style'] = ''
-    s = ''.join('{}: {};'.format(k, v) for k, v in tag_style.items())
-    tag['style'] += s
+    if "style" not in tag.attrs:
+        tag["style"] = ""
+    s = "".join("{}: {};".format(k, v) for k, v in tag_style.items())
+    tag["style"] += s
 
 
 def _pseudoclass_applies(tag, pseudoclass):
     """Helper: Returns True iff the given pseudo-class name applies to the given tag."""
     # TODO: Support more CSS pseudo-classes.
     nth_child = tag.parent.index(tag)
-    if pseudoclass == 'nth-child(even)' and nth_child % 2 == 0:
+    if pseudoclass == "nth-child(even)" and nth_child % 2 == 0:
         return True
-    elif pseudoclass == 'nth-child(odd)' and nth_child % 2 != 0:
+    elif pseudoclass == "nth-child(odd)" and nth_child % 2 != 0:
         return True
-    elif pseudoclass == 'first-child' and nth_child == 0:
+    elif pseudoclass == "first-child" and nth_child == 0:
         return True
-    elif pseudoclass == 'last-child' and nth_child + 1 == len([c for c in tag.parent.children]):
+    elif pseudoclass == "last-child" and nth_child + 1 == len(
+        [c for c in tag.parent.children]
+    ):
         return True
     return False
 
 
 def _split_key(key):
     """Helper: Splits CSS key into selector and list of available pseudo-classes."""
-    pair = key.split(':')
+    pair = key.split(":")
     if len(pair) == 1:
         return (pair[0], [])
     return tuple(pair)
 
 
 def _selector_applies(selector, tag):
-    """Helper: Returns true iff the given selector specification applies to the given tag."""
+    """Helper: Returns true iff the selector specification applies to the given tag."""
     # TODO: Support more complicated CSS selectors.
-    if ' ' in selector:
-        parent, inner_selector = selector.split(' ')
+    if " " in selector:
+        parent, inner_selector = selector.split(" ")
     else:
         parent, inner_selector = None, selector
 
@@ -47,11 +49,11 @@ def _selector_applies(selector, tag):
     if tag.name == inner_selector:
         return True
 
-    for tag_class in tag.get('class', []):
-        if inner_selector == '.' + tag_class:
+    for tag_class in tag.get("class", []):
+        if inner_selector == "." + tag_class:
             return True
 
-    if 'id' in tag.attrs and inner_selector == '#' + tag['id']:
+    if "id" in tag.attrs and inner_selector == "#" + tag["id"]:
         return True
 
     return False
@@ -71,7 +73,7 @@ def _get_tag_style(tag, style, selectors):
         if selectors[key]:
             for pseudoclass in selectors[key]:
                 if _pseudoclass_applies(tag, pseudoclass):
-                    tag_style.update(style[key + ':' + pseudoclass])
+                    tag_style.update(style[key + ":" + pseudoclass])
 
     return tag_style
 

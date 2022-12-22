@@ -8,37 +8,47 @@ import requests
 from pytz import timezone
 from slugify import slugify
 
-SHOWTIMES_BASE_URL = 'https://feeds.drafthouse.com/adcService/showtimes.svc/market'
-DRAFTHOUSE_BASE_URL = 'https://drafthouse.com'
+SHOWTIMES_BASE_URL = "https://feeds.drafthouse.com/adcService/showtimes.svc/market"
+DRAFTHOUSE_BASE_URL = "https://drafthouse.com"
 
 log = logging.getLogger(__name__)
 
 
 class Cinema:
-    def __init__(self, cinema_id, cinema_name, market_name):
+    def __init__(self, cinema_id, cinema_name, market_slug):
         self.cinema_id = cinema_id
         self.cinema_name = cinema_name
-        self.cinema_market = market_name.split(',')[0].lower()
+        self.cinema_market_slug = market_slug
 
     @property
     def cinema_url(self):
-        return '{}/theater/{}'.format(DRAFTHOUSE_BASE_URL, slugify(self.cinema_name))
+        return "{}/theater/{}".format(DRAFTHOUSE_BASE_URL, slugify(self.cinema_name))
 
 
 class Film:
-    def __init__(self, session_id, film_id, film_name, film_datetime, film_status, cinema):
+    def __init__(
+        self,
+        session_id,
+        film_id,
+        film_name,
+        film_datetime,
+        film_status,
+        film_slug,
+        cinema,
+    ):
         self.session_id = session_id
         self.film_id = film_id
         self.film_name = film_name
         self.film_datetime = film_datetime
         self.film_status = film_status
+        self.film_slug = film_slug
         self.cinema = cinema
 
     @property
     def film_url(self):
         cinema = self.cinema.cinema_id
         session = self.session_id
-        return '{}/ticketing/{}/{}'.format(DRAFTHOUSE_BASE_URL, cinema, session)
+        return "{}/ticketing/{}/{}".format(DRAFTHOUSE_BASE_URL, cinema, session)
 
 
 def format_json(data):
@@ -57,46 +67,56 @@ def query(url, **kwargs):
         resp = requests.get(url, params=kwargs, verify=True)
         data = resp.json()
     except Exception as e:
-        log.error('market sessions fail: {}'.format(e))
+        log.error("market sessions fail: {}".format(e))
         raise
-    if 'error' in data:
-        raise Exception('Alamo Drafthouse API error: {}'.format(data['error']))
+    if "error" in data:
+        raise Exception("Alamo Drafthouse API error: {}".format(data["error"]))
     return data
 
 
 def query_pancakes(market_id, overrides):
     """Queries the Alamo Drafthouse API for the list of pancakes in a given market."""
-    data = query('{}/{}'.format(SHOWTIMES_BASE_URL, market_id))
-    market_data = data.get('Market')
+    data = query("{}/{}".format(SHOWTIMES_BASE_URL, market_id))
+    market_data = data.get("Market")
     if log.isEnabledFor(logging.DEBUG):
-        log.debug('market response:\n%s', format_json(data))
+        log.debug("market response:\n%s", format_json(data))
     if not market_data:
         return []
-    market_name = market_data.get('MarketName')
+    market_slug = market_data.get("MarketSlug")
     pancakes = []
-    for date_data in market_data.get('Dates', []):
-        log.debug('date: %s', date_data.get('Date'))
-        for cinema_data in date_data.get('Cinemas', []):
-            cinema_name = cinema_data.get('CinemaName')
-            log.debug('cinema: %s', cinema_name)
-            cinema = Cinema(cinema_data.get('CinemaId'), cinema_name, market_name)
-            cinema_timezone = timezone(cinema_data.get('CinemaTimeZoneATE'))
-            for film_data in cinema_data.get('Films', []):
-                film_id = film_data.get('FilmId')
-                film_name = film_data.get('FilmName')
-                log.debug('film: %s', film_name)
+    for date_data in market_data.get("Dates", []):
+        log.debug("date: %s", date_data.get("Date"))
+        for cinema_data in date_data.get("Cinemas", []):
+            cinema_name = cinema_data.get("CinemaName")
+            log.debug("cinema: %s", cinema_name)
+            cinema = Cinema(cinema_data.get("CinemaId"), cinema_name, market_slug)
+            cinema_timezone = timezone(cinema_data.get("CinemaTimeZoneATE"))
+            for film_data in cinema_data.get("Films", []):
+                film_id = film_data.get("FilmId")
+                film_name = film_data.get("FilmName")
+                film_slug = film_data.get("FilmSlug")
+                log.debug("film: %s", film_name)
                 if not any(s.lower() in film_name.lower() for s in overrides):
-                    if not all(s in film_name.lower() for s in ['pancake']):
+                    if not all(s in film_name.lower() for s in ["pancake"]):
                         continue  # DO NOT WANT!
-                for series_data in film_data.get('Series', []):
-                    for format_data in series_data.get('Formats', []):
-                        for session_data in format_data.get('Sessions', []):
-                            session_datetime = session_data.get('SessionDateTime')
-                            log.debug('session: %s', session_datetime)
-                            film_datetime = parse_datetime(session_datetime, cinema_timezone)
-                            film_status = session_data.get('SessionStatus')
-                            session_id = session_data.get('SessionId')
-                            film = Film(session_id, film_id, film_name, film_datetime, film_status,
-                                        cinema)
+                for series_data in film_data.get("Series", []):
+                    for format_data in series_data.get("Formats", []):
+                        for session_data in format_data.get("Sessions", []):
+                            session_datetime = session_data.get("SessionDateTime")
+                            log.debug("session: %s", session_datetime)
+                            film_datetime = parse_datetime(
+                                session_datetime, cinema_timezone
+                            )
+                            film_status = session_data.get("SessionStatus")
+                            session_id = session_data.get("SessionId")
+                            film = Film(
+                                session_id=session_id,
+                                film_id=film_id,
+                                film_name=film_name,
+                                film_datetime=film_datetime,
+                                film_status=film_status,
+                                film_slug=film_slug,
+                                cinema=cinema,
+                            )
                             pancakes.append(film)
     return pancakes
