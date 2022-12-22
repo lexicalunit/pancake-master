@@ -101,10 +101,12 @@ def html_digest(pancakes):
         assert film_heading.a is not None
         film_heading.h1["class"] = "film_heading"
         film_heading.a["href"] = (
-            f"https://drafthouse.com"
-            f"/{market_slug}"
-            f"/show/{film_slug}"
-            f"?cinemaId={cinema_id}"
+            "https://drafthouse.com/"
+            + market_slug
+            + "/show/"
+            + film_slug
+            + "?cinemaId="
+            + cinema_id
         )
         film_heading.a.append(film)
 
