@@ -182,6 +182,7 @@ function parse_market (data) {
   }
   var status_message = 'Parsing Market Data...'
   var status_id = status(status_message)
+  var market_slug = data.Market.MarketSlug
   for (var d = 0; d < data.Market.Dates.length; d++) {
     var date = data.Market.Dates[d]
     var film_date = date.Date
@@ -193,6 +194,7 @@ function parse_market (data) {
       for (var f = 0; f < cinema.Films.length; f++) {
         var film = cinema.Films[f]
         var film_uid = film.FilmId
+        var film_slug = film.FilmSlug
         var film_name = film.FilmName
         for (var s = 0; s < film.Series.length; s++) {
           var series = film.Series[s]
@@ -203,13 +205,16 @@ function parse_market (data) {
               var session_id = session.SessionId
               var film_url = 'https://drafthouse.com/ticketing/' + cinema_id + '/' + session_id
               var show = {
-                title: capwords(film_name.toLowerCase()),
-                film_uid: film_uid,
-                cinema: cinema_name,
+                cinema_id: cinema_id,
                 cinema_url: cinema_url,
+                cinema: cinema_name,
                 date: film_date,
-                time: session.SessionTime,
+                film_slug: film_slug,
+                film_uid: film_uid,
+                market_slug: market_slug,
                 status: session.SessionStatus,
+                time: session.SessionTime,
+                title: capwords(film_name.toLowerCase()),
                 url: session.SessionStatus === 'onsale' ? film_url : null
               }
               shows.push(show)
