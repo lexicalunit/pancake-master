@@ -180,7 +180,6 @@ function parse_market (data) {
     search()
     return
   }
-  console.log(data)
   var status_message = 'Parsing Market Data...'
   var status_id = status(status_message)
   var market_slug = data.Market.MarketSlug
